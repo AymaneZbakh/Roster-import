@@ -46,7 +46,6 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Subtle grid background */
     body::before {
       content: '';
       position: fixed;
@@ -67,7 +66,6 @@
       padding: 2rem 1.5rem 4rem;
     }
 
-    /* ── HEADER ── */
     .header {
       display: flex;
       align-items: center;
@@ -126,7 +124,6 @@
     .btn:hover { background: var(--bg-hover); color: var(--text); border-color: var(--ram-red); }
     .btn i { font-size: 15px; }
 
-    /* ── STATS ── */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -160,7 +157,6 @@
       font-family: var(--mono);
     }
 
-    /* ── FILTER BAR ── */
     .filters {
       display: flex;
       gap: 6px;
@@ -191,7 +187,6 @@
     .filter-btn:hover:not(.active) { background: var(--bg-card); color: var(--text); border-color: var(--border-active); }
     .filter-btn.active { background: var(--ram-red); color: white; border-color: transparent; }
 
-    /* ── UPLOAD ZONE ── */
     .upload-zone {
       border: 1.5px dashed var(--border-active);
       border-radius: 12px;
@@ -219,7 +214,6 @@
 
     #fileInput { display: none; }
 
-    /* ── ACTIVITY CARDS ── */
     .activity-list { display: flex; flex-direction: column; gap: 8px; }
 
     .activity-card {
@@ -293,7 +287,6 @@
     }
     .card-chevron.open { transform: rotate(180deg); }
 
-    /* ── CARD BODY ── */
     .card-body {
       border-top: 1px solid var(--border);
       padding: 16px;
@@ -333,7 +326,6 @@
       margin: 14px 0 8px;
     }
 
-    /* ── TIMELINE ── */
     .timeline { display: flex; flex-direction: column; gap: 4px; }
 
     .tl-row {
@@ -370,7 +362,6 @@
     }
     .delay-tag.late { background: rgba(226,75,74,0.15); color: #e24b4a; }
 
-    /* ── CREW ── */
     .crew-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 
     .crew-pill {
@@ -416,7 +407,137 @@
     .trn-I { background: var(--blue-dim); color: var(--blue); }
     .trn-T { background: var(--green-dim); color: var(--green); }
 
-    /* ── EMPTY STATE ── */
+    .input-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .input-tab {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 11px 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-3);
+      cursor: pointer;
+      transition: all .15s;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    .input-tab i { font-size: 15px; }
+    .input-tab:hover { color: var(--text-2); background: rgba(255,255,255,0.02); }
+    .input-tab.active { color: var(--ram-red); border-bottom-color: var(--ram-red); }
+
+    .tab-pane { display: none; padding: 0; }
+    .tab-pane.active { display: block; }
+
+    .tab-pane#tab-file .upload-zone {
+      border-radius: 0;
+      border: none;
+      border-bottom: none;
+      margin-bottom: 0;
+      background: transparent;
+    }
+
+    .paste-area {
+      display: block;
+      width: 100%;
+      height: 180px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 14px 16px;
+      resize: none;
+      outline: none;
+      line-height: 1.6;
+    }
+    .paste-area::placeholder { color: var(--text-3); }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 9px 18px;
+      margin: 12px 16px;
+      border-radius: var(--r);
+      border: none;
+      background: var(--ram-red);
+      color: white;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-primary i { font-size: 15px; }
+
+    .api-form { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+    .api-field { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+    .api-field label {
+      font-size: 10px;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-family: var(--mono);
+    }
+    .api-input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color .15s;
+      width: 100%;
+    }
+    .api-input:focus { border-color: var(--ram-red); }
+    .api-input[readonly] { color: var(--text-3); cursor: default; }
+
+    .api-row { display: flex; gap: 10px; }
+    @media (max-width: 480px) { .api-row { flex-direction: column; } }
+
+    .api-note {
+      font-size: 11px;
+      color: var(--text-3);
+      font-family: var(--mono);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .api-note i { font-size: 14px; color: var(--green); flex-shrink: 0; }
+
+    .api-status {
+      font-size: 12px;
+      font-family: var(--mono);
+      min-height: 18px;
+      color: var(--text-2);
+    }
+    .api-status.error { color: #e24b4a; }
+    .api-status.loading { color: var(--amber); }
+    .api-status.ok { color: var(--green); }
+
     .empty-state {
       text-align: center;
       padding: 3.5rem 1rem;
@@ -425,7 +546,6 @@
     .empty-state i { font-size: 42px; display: block; margin-bottom: 12px; }
     .empty-state p { font-size: 13px; font-family: var(--mono); }
 
-    /* ── RESPONSIVE ── */
     @media (max-width: 640px) {
       .app { padding: 1.25rem 1rem 3rem; }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -469,10 +589,47 @@
     <button class="filter-btn" data-filter="other">Other</button>
   </div>
 
-  <div id="uploadZone" class="upload-zone" onclick="document.getElementById('fileInput').click()">
-    <i class="ti ti-file-import"></i>
-    <p>Drop your roster JSON here or click to browse</p>
-    <span>Supports Royal Air Maroc crew roster format</span>
+  <div id="inputPanel" class="input-panel">
+    <div class="input-tabs">
+      <button class="input-tab active" data-tab="file" onclick="switchTab('file')"><i class="ti ti-file-upload"></i> File</button>
+      <button class="input-tab" data-tab="paste" onclick="switchTab('paste')"><i class="ti ti-clipboard-text"></i> Paste JSON</button>
+      <button class="input-tab" data-tab="api" onclick="switchTab('api')"><i class="ti ti-cloud-download"></i> Fetch from API</button>
+    </div>
+
+    <div id="tab-file" class="tab-pane active">
+      <div id="uploadZone" class="upload-zone" onclick="document.getElementById('fileInput').click()">
+        <i class="ti ti-file-import"></i>
+        <p>Drop your roster JSON here or click to browse</p>
+        <span>Supports Royal Air Maroc crew roster format</span>
+      </div>
+    </div>
+
+    <div id="tab-paste" class="tab-pane">
+      <textarea id="pasteArea" class="paste-area" placeholder='Paste your roster JSON here…'></textarea>
+      <button class="btn-primary" onclick="loadFromPaste()"><i class="ti ti-check"></i> Load roster</button>
+    </div>
+
+    <div id="tab-api" class="tab-pane">
+      <div class="api-form">
+        <div class="api-field">
+          <label>API URL</label>
+          <input type="text" id="apiUrl" value="https://crewaccess.ram.jepphost.com/access/rs/crew/roster/v1" readonly class="api-input">
+        </div>
+        <div class="api-row">
+          <div class="api-field">
+            <label>Username / Crew ID</label>
+            <input type="text" id="apiUser" placeholder="e.g. 12345" class="api-input">
+          </div>
+          <div class="api-field">
+            <label>Password</label>
+            <input type="password" id="apiPass" placeholder="••••••••" class="api-input">
+          </div>
+        </div>
+        <div class="api-note"><i class="ti ti-shield-lock"></i> Credentials are only used to call the API and are never stored or sent anywhere else.</div>
+        <button class="btn-primary" onclick="fetchFromApi()"><i class="ti ti-cloud-download"></i> Fetch roster</button>
+        <div id="apiStatus" class="api-status"></div>
+      </div>
+    </div>
   </div>
 
   <div id="activityList" class="activity-list"></div>
@@ -480,18 +637,40 @@
 
 <script>
 const fileInput = document.getElementById('fileInput');
-const uploadZone = document.getElementById('uploadZone');
 const activityList = document.getElementById('activityList');
 let allCards = [];
 let currentFilter = 'all';
 let rosterData = null;
 
+// ── Automated Roster Loader Hook ──
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const response = await fetch('roster.json');
+    if (response.ok) {
+      const data = await response.json();
+      renderRoster(data);
+      exportIcal();
+    }
+  } catch (error) {
+    console.log("Roster file not synced yet.");
+  }
+});
+
+// ── Tab switching ──
+function switchTab(name) {
+  document.querySelectorAll('.input-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+}
+
+// ── File upload ──
 fileInput.addEventListener('change', e => {
   const file = e.target.files[0]; if (!file) return;
   const r = new FileReader();
   r.onload = ev => { try { renderRoster(JSON.parse(ev.target.result)); } catch { alert('Could not parse JSON.'); } };
   r.readAsText(file);
 });
+
+const uploadZone = document.getElementById('uploadZone');
 uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = '#c8102e'; });
 uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
 uploadZone.addEventListener('drop', e => {
@@ -502,7 +681,57 @@ uploadZone.addEventListener('drop', e => {
   r.readAsText(file);
 });
 
-// Pure UTC — no offsets applied
+// ── Paste JSON ──
+function loadFromPaste() {
+  const text = document.getElementById('pasteArea').value.trim();
+  if (!text) { alert('Please paste your JSON first.'); return; }
+  try { renderRoster(JSON.parse(text)); }
+  catch { alert('Invalid JSON — please check and try again.'); }
+}
+
+// ── Fetch from API ──
+async function fetchFromApi() {
+  const url    = document.getElementById('apiUrl').value.trim();
+  const user   = document.getElementById('apiUser').value.trim();
+  const pass   = document.getElementById('apiPass').value;
+  const status = document.getElementById('apiStatus');
+
+  if (!user || !pass) { setApiStatus('error', 'Please enter your username and password.'); return; }
+
+  setApiStatus('loading', '⏳ Connecting to RAM API…');
+
+  try {
+    const credentials = btoa(user + ':' + pass);
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Basic ' + credentials,
+        'Accept': 'application/json',
+      },
+    });
+
+    if (res.status === 401) { setApiStatus('error', '❌ Invalid credentials — check your username and password.'); return; }
+    if (res.status === 403) { setApiStatus('error', '❌ Access denied.'); return; }
+    if (!res.ok) { setApiStatus('error', '❌ Server returned ' + res.status + ' — ' + res.statusText); return; }
+
+    const data = await res.json();
+    setApiStatus('ok', '✅ Roster loaded successfully.');
+    renderRoster(data);
+  } catch (err) {
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      setApiStatus('error', '❌ Could not reach the API. This may be a CORS restriction — try loading your JSON file directly instead.');
+    } else {
+      setApiStatus('error', '❌ ' + err.message);
+    }
+  }
+}
+
+function setApiStatus(cls, msg) {
+  const el = document.getElementById('apiStatus');
+  el.className = 'api-status ' + cls;
+  el.textContent = msg;
+}
+
 function fmtTime(iso) {
   if (!iso) return '--';
   const d = new Date(iso);
@@ -574,7 +803,7 @@ function renderRoster(data) {
   document.getElementById('crewLabel').textContent = crewId
     ? 'Crew ID: ' + crewId + ' · ' + activities.length + ' activities'
     : activities.length + ' activities loaded';
-  uploadZone.style.display = 'none';
+  document.getElementById('inputPanel').style.display = 'none';
   document.getElementById('statsGrid').style.display = 'grid';
   document.getElementById('filterBar').style.display = 'flex';
 
@@ -593,7 +822,6 @@ function renderRoster(data) {
     const role = act.key?.role || '';
     const keyName = act.key?.name || '';
 
-    // Route in header
     let routeText = act.startStation + ' → ' + act.endStation;
     if (flightLegs.length > 1) {
       const stops = [...new Set(flightLegs.map(l => l.startStation))];
@@ -601,7 +829,6 @@ function renderRoster(data) {
       routeText = stops.join(' → ');
     }
 
-    // Timeline — skip briefing and debriefing
     const SKIP = new Set(['briefing', 'debriefing']);
     let timelineHTML = '<div class="section-label">Timeline</div><div class="timeline">';
 
@@ -658,7 +885,6 @@ function renderRoster(data) {
     });
     timelineHTML += '</div>';
 
-    // Training tags
     const trnTags = [...new Set(subs.flatMap(s => (s.trainingTags||[]).map(t => t.descr)))].filter(Boolean);
 
     const card = document.createElement('div');
@@ -735,7 +961,6 @@ function exportIcal() {
   }
 
   function fold(line) {
-    // RFC 5545: lines > 75 octets must be folded
     const out = [];
     while (line.length > 75) {
       out.push(line.slice(0, 75));
@@ -772,7 +997,6 @@ function exportIcal() {
     const dtend   = icsDate(act.endTime);
     if (!dtstart || !dtend) return;
 
-    // Summary line
     const typeLabel = { flight:'✈', standby:'⏳', training:'📚', other:'🗓' }[type] || '';
     let route = act.startStation + ' → ' + act.endStation;
     if (flightLegs.length > 1) {
@@ -781,11 +1005,8 @@ function exportIcal() {
       route = stops.join(' → ');
     }
     const summary = typeLabel + ' ' + route + (role ? ' (' + role + ')' : '');
-
-    // Location: departure airport
     const location = act.startStation || '';
 
-    // Description: build a readable block
     const descParts = [];
     if (keyName) descParts.push('Trip: ' + keyName);
     if (act.durationMinutes) descParts.push('Duration: ' + fmtDuration(act.durationMinutes));
