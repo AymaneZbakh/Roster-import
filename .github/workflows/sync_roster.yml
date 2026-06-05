@@ -1,0 +1,75 @@
+name: Automated RAM Roster Sync
+
+on:
+  schedule:
+    - cron: '0 4 * * *' # Runs automatically every single day at 04:00 AM UTC
+  workflow_dispatch:   # Also adds a manual "Run Now" button inside your GitHub dashboard
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python Environment
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install Network Requests Library
+      run: pip install requests
+
+    - name: Pull Live Roster Data
+      env:
+        CREW_USER: ${{ secrets.RAM_USER }}
+        CREW_PASS: ${{ secrets.RAM_PASS }}
+      run: |
+        python - <<EOF
+        import os
+        import json
+        import requests
+        import base64
+
+        url = "https://crewaccess.ram.jepphost.com/access/rs/crew/roster/v1"
+        username = os.environ.get("CREW_USER")
+        password = os.environ.get("CREW_PASS")
+
+        # Encode credentials for standard authentication
+        credentials = f"{username}:{password}"
+        encoded_creds = base64.b64encode(credentials.encode()).decode()
+
+        headers = {
+            "Authorization": f"Basic {encoded_creds}",
+            "Accept": "application/json"
+        }
+
+        print("Connecting to RAM CrewAccess Portal...")
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            data = response.json()
+            # Format nicely and save directly over the target roster file
+            with open("roster.json", "w") as f:
+                json.dump(data, f, indent=2)
+            print("Successfully pulled and saved new roster.json data file.")
+        else:
+            print(f"Failed to fetch data. Server responded with: {response.status_code}")
+            exit(1)
+        EOF
+
+    - name: Commit and Update GitHub Pages
+      run: |
+        git config --global user.name "Roster Automation Bot"
+        git config --global user.email "bot@github.actions"
+        git add roster.json
+        if git diff --staged --quiet; then
+          echo "No changes detected in your roster schedule. Skipping commit."
+        else
+          git commit -m "🔄 Automated Schedule Update [Skip CI]"
+          git push
+        fi
