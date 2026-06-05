@@ -59,15 +59,25 @@ jobs:
             print("Navigating to RAM CrewAccess...")
             page.goto("https://crewaccess.ram.jepphost.com/access/crewweb/")
 
-            page.wait_for_selector("input[type='text'], input[name='username']")
-            page.fill("input[type='text'], input[name='username']", username)
-            page.fill("input[type='password']", password)
+            # Wait for either standard login box or the ADFS login box
+            print("Waiting for login input fields...")
+            page.wait_for_selector("input[id*='userNameInput'], input[type='text'], input[name='username']", timeout=45000)
             
-            print("Submitting login credentials...")
-            page.click("button[type='submit'], input[type='submit']")
+            # Fill username and password using standard or ADFS selectors
+            if page.locator("input[id*='userNameInput']").is_visible():
+                page.fill("input[id*='userNameInput']", username)
+                page.fill("input[id*='passwordInput']", password)
+                print("Submitting ADFS login credentials...")
+                page.click("span[id*='submitButton'], input[type='submit']")
+            else:
+                page.fill("input[type='text'], input[name='username']", username)
+                page.fill("input[type='password']", password)
+                print("Submitting standard login credentials...")
+                page.click("button[type='submit'], input[type='submit']")
 
             # Wait for data request to finish
-            page.wait_for_timeout(10000) 
+            print("Waiting for roster data to sync...")
+            page.wait_for_timeout(15000) 
 
             if roster_data:
                 with open("roster.json", "w") as f:
