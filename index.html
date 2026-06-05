@@ -58,12 +58,106 @@
       z-index: 0;
     }
 
+    /* Gatekeeper Protection Screen */
+    .pin-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .pin-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 2.5rem 2rem;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .pin-box .logo {
+      margin: 0 auto 1.5rem;
+    }
+
+    .pin-box h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+
+    .pin-box p {
+      font-size: 12px;
+      color: var(--text-2);
+      margin-bottom: 1.5rem;
+    }
+
+    .pin-input-wrapper {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    .pin-input-wrapper input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-active);
+      border-radius: var(--r);
+      padding: 12px;
+      color: white;
+      font-family: var(--mono);
+      font-size: 16px;
+      letter-spacing: 6px;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .pin-input-wrapper input:focus {
+      border-color: var(--ram-red);
+    }
+
+    .pin-box .error-msg {
+      color: #e24b4a;
+      font-size: 11px;
+      font-family: var(--mono);
+      margin-top: -8px;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .pin-btn {
+      width: 100%;
+      background: var(--ram-red);
+      color: white;
+      border: none;
+      border-radius: var(--r);
+      padding: 11px;
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      box-shadow: 0 0 15px var(--ram-red-glow);
+    }
+
+    .pin-btn:hover {
+      opacity: 0.9;
+    }
+
+    /* Main App Workspace */
     .app {
       position: relative;
       z-index: 1;
       max-width: 860px;
       margin: 0 auto;
       padding: 2rem 1.5rem 4rem;
+      display: none; /* Controlled by Auth verification */
     }
 
     .header {
@@ -420,7 +514,20 @@
 </head>
 <body>
 
-<div class="app">
+<div id="pinOverlay" class="pin-overlay">
+  <div class="pin-box">
+    <div class="logo">RAM</div>
+    <h2>Protected Console</h2>
+    <p>Authentication required to review flight rosters.</p>
+    <div class="pin-input-wrapper">
+      <input type="password" id="pinInput" maxlength="6" placeholder="••••••" autocomplete="off" autofocus>
+    </div>
+    <div id="errorMsg" class="error-msg">Invalid access credential code</div>
+    <button class="pin-btn" onclick="verifyPinCode()">Unlock Workspace</button>
+  </div>
+</div>
+
+<div id="appContainer" class="app">
   <div class="header">
     <div class="logo">RAM</div>
     <div class="header-text">
@@ -468,12 +575,49 @@
 <script>
 const activityList = document.getElementById('activityList');
 const monthSelect = document.getElementById('monthSelect');
+const pinOverlay = document.getElementById('pinOverlay');
+const appContainer = document.getElementById('appContainer');
+const pinInput = document.getElementById('pinInput');
+const errorMsg = document.getElementById('errorMsg');
+
 let allCards = [];
 let currentFilter = 'all';
 let currentMonthFilter = 'all';
 let rosterData = null;
 
-window.addEventListener('DOMContentLoaded', async () => {
+// Target secure hash value for code signature verification (SHA-256 for 080425)
+const targetHash = "294101e4a2a1b91bc6586866ec5687799ffb737d10e54d3d2db73b677a2335f6";
+
+async function sha256(str) {
+  const buf = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function verifyPinCode() {
+  const inputVal = pinInput.value;
+  const computedHash = await sha256(inputVal);
+  
+  if (computedHash === targetHash) {
+    errorMsg.style.display = 'none';
+    pinOverlay.style.display = 'none';
+    appContainer.style.display = 'block';
+    initializeRosterSync();
+  } else {
+    errorMsg.style.display = 'block';
+    pinInput.value = '';
+    pinInput.focus();
+  }
+}
+
+// Allow pressing "Enter" key inside the prompt box
+pinInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    verifyPinCode();
+  }
+});
+
+async function initializeRosterSync() {
   try {
     const response = await fetch('roster.json');
     if (response.ok) {
@@ -485,7 +629,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   } catch (error) {
     showErrorState();
   }
-});
+}
 
 function showErrorState() {
   document.getElementById('crewLabel').textContent = "Sync pending";
@@ -688,7 +832,6 @@ function renderRoster(data) {
     allCards.push(card);
   });
 
-  // Populate month filter dropdown dynamically
   const sortedMonths = Array.from(uniqueMonths).map(m => JSON.parse(m)).sort((a, b) => a.key.localeCompare(b.key));
   monthSelect.innerHTML = '<option value="all">All Months</option>';
   sortedMonths.forEach(m => {
