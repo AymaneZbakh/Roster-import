@@ -142,7 +142,6 @@
       font-family: var(--mono);
       margin-top: -12px;
       margin-bottom: 16px;
-      display: none;
     }
 
     /* Digital Keypad Styles */
@@ -412,6 +411,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .card-role { font-size: 11px; font-weight: 400; color: var(--text-3); }
 
     .card-time {
       font-size: 11px;
@@ -468,6 +468,7 @@
       font-family: var(--mono);
       margin: 14px 0 8px;
     }
+    .card-trn-tags { font-size: 12px; color: var(--text-2); margin-bottom: 10px; font-family: var(--mono); }
 
     .timeline { display: flex; flex-direction: column; gap: 4px; }
 
@@ -486,11 +487,14 @@
     .gt-row      { border-color: var(--green); }
 
     .tl-type { font-size: 10px; color: var(--text-3); padding-top: 2px; font-family: var(--mono); }
+    .tl-type--layover { color: var(--blue); }
+    .tl-type--ground  { color: var(--green); }
     .tl-label { font-size: 13px; font-weight: 600; color: var(--text); }
     .tl-sublabel { font-size: 11px; color: var(--text-2); margin-top: 3px; font-family: var(--mono); }
     .tl-time { font-size: 11px; color: var(--text-3); text-align: right; white-space: nowrap; padding-top: 2px; font-family: var(--mono); }
 
-    .fn-tag { font-size: 11px; font-weight: 600; color: var(--ram-red); font-family: var(--mono); }
+    .fn-tag  { font-size: 11px; font-weight: 600; color: var(--ram-red); font-family: var(--mono); }
+    .tl-date { font-size: 10px; color: var(--text-3); }
     .sched-line { font-size: 11px; color: var(--text-3); margin-top: 3px; font-family: var(--mono); }
 
     .delay-tag {
@@ -566,6 +570,11 @@
       .tl-row { grid-template-columns: 72px 1fr auto; gap: 8px; }
       .header-text h1 { font-size: 15px; }
     }
+
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    .hidden { display: none !important; }
+    .spin   { animation: spin 1s linear infinite; }
   </style>
 </head>
 <body>
@@ -581,7 +590,7 @@
       <input type="password" id="pinInput" maxlength="6" placeholder="••••••" autocomplete="off" readonly>
     </div>
     
-    <div id="errorMsg" class="error-msg">Invalid access credential code</div>
+    <div id="errorMsg" class="error-msg hidden">Invalid access credential code</div>
 
     <div class="numpad-grid">
       <button class="numpad-btn" onclick="pressKey('1')">1</button>
@@ -611,19 +620,19 @@
       <h1>Automated Roster Platform</h1>
       <p id="crewLabel">Connecting to cloud system...</p>
     </div>
-    <button class="btn" id="icalBtn" style="display:none" onclick="exportIcal()">
+    <button class="btn hidden" id="icalBtn" onclick="exportIcal()">
       <i class="ti ti-calendar-down"></i> Export Calendar (.ics)
     </button>
   </div>
 
-  <div id="statsGrid" class="stats-grid" style="display:none;">
+  <div id="statsGrid" class="stats-grid hidden">
     <div class="stat"><div class="stat-label">Flights</div><div class="stat-value" id="statFlights">0</div></div>
     <div class="stat"><div class="stat-label">Duties</div><div class="stat-value" id="statDuties">0</div></div>
     <div class="stat"><div class="stat-label">Standby</div><div class="stat-value" id="statStandby">0</div></div>
     <div class="stat"><div class="stat-label">Training</div><div class="stat-value" id="statTraining">0</div></div>
   </div>
 
-  <div id="filterBar" class="filters" style="display:none;">
+  <div id="filterBar" class="filters hidden">
     <span class="filters-label">Show:</span>
     <button class="filter-btn active" data-filter="all">All</button>
     <button class="filter-btn" data-filter="flight">Flights</button>
@@ -638,16 +647,12 @@
 
   <div id="activityList" class="activity-list">
     <div class="empty-state" id="loadingState">
-      <i class="ti ti-loader animate-spin" style="animation: spin 1s linear infinite;"></i>
+      <i class="ti ti-loader spin"></i>
       <p>Synchronizing Live Roster File</p>
       <span>Pulling background data layers...</span>
     </div>
   </div>
 </div>
-
-<style>
-@keyframes spin { 100% { transform: rotate(360deg); } }
-</style>
 
 <script>
 const activityList = document.getElementById('activityList');
@@ -662,34 +667,30 @@ let currentFilter = 'all';
 let currentMonthFilter = 'all';
 let rosterData = null;
 
-// Numpad Functions
 function pressKey(num) {
-  errorMsg.style.display = 'none';
-  if (pinInput.value.length < 6) {
-    pinInput.value += num;
-  }
+  errorMsg.classList.add('hidden');
+  if (pinInput.value.length < 6) pinInput.value += num;
 }
 
 function pressDelete() {
-  errorMsg.style.display = 'none';
+  errorMsg.classList.add('hidden');
   pinInput.value = pinInput.value.slice(0, -1);
 }
 
 function pressClear() {
-  errorMsg.style.display = 'none';
+  errorMsg.classList.add('hidden');
   pinInput.value = '';
 }
 
 function verifyPinCode() {
   const inputVal = pinInput.value;
-  
   if (inputVal === "080425") {
-    errorMsg.style.display = 'none';
-    pinOverlay.style.display = 'none';
+    errorMsg.classList.add('hidden');
+    pinOverlay.classList.add('hidden');
     appContainer.style.display = 'block';
     initializeRosterSync();
   } else {
-    errorMsg.style.display = 'block';
+    errorMsg.classList.remove('hidden');
     pinInput.value = '';
   }
 }
@@ -781,7 +782,7 @@ function buildCrewHTML(crew, trainingTags) {
 
 function renderRoster(data) {
   rosterData = data;
-  document.getElementById('icalBtn').style.display = '';
+  document.getElementById('icalBtn').classList.remove('hidden');
   const entity = data.entity || data;
   const activities = entity.activities || [];
   const crewId = entity.crewId || '';
@@ -789,8 +790,8 @@ function renderRoster(data) {
   document.getElementById('crewLabel').textContent = crewId
     ? 'Crew ID: ' + crewId + ' · ' + activities.length + ' activities'
     : activities.length + ' activities loaded';
-  document.getElementById('statsGrid').style.display = 'grid';
-  document.getElementById('filterBar').style.display = 'flex';
+  document.getElementById('statsGrid').classList.remove('hidden');
+  document.getElementById('filterBar').classList.remove('hidden');
 
   let fc = 0, dc = 0, sc = 0, tc = 0;
   allCards = [];
@@ -842,7 +843,7 @@ function renderRoster(data) {
         const schedLine = schSt ? `<div class="sched-line">Sched: ${schSt} – ${schEt}</div>` : '';
         const trnTags = (s.trainingTags||[]).map(t => t.descr).join(', ');
         timelineHTML += `<div class="tl-row flight-row">
-          <div class="tl-type"><span class="fn-tag">${fn}</span>${delayBadge}<br><span style="font-size:10px;color:var(--text-3)">${fmtDate(s.startTime)}</span></div>
+          <div class="tl-type"><span class="fn-tag">${fn}</span>${delayBadge}<br><span class="tl-date">${fmtDate(s.startTime)}</span></div>
           <div>
             <div class="tl-label">${s.startStation} → ${s.endStation}</div>
             <div class="tl-sublabel">${s.role?.id||role} · ${s.aircraftType||''} ${s.tail ? '· '+s.tail : ''} · Block ${fmtDuration(s.blockTimeMinutes||s.durationMinutes)}</div>
@@ -855,7 +856,7 @@ function renderRoster(data) {
 
       } else if (s.type === 'layover') {
         timelineHTML += `<div class="tl-row layover-row">
-          <div class="tl-type" style="color:var(--blue)">Layover</div>
+          <div class="tl-type tl-type--layover">Layover</div>
           <div>
             <div class="tl-label">${s.startStation} · ${dur}</div>
           </div>
@@ -866,7 +867,7 @@ function renderRoster(data) {
         const code = s.activityCode?.id || s.type;
         const desc = s.activityCode?.description || '';
         timelineHTML += `<div class="tl-row gt-row">
-          <div class="tl-type" style="color:var(--green)">${code}</div>
+          <div class="tl-type tl-type--ground">${code}</div>
           <div>
             <div class="tl-label">${s.startStation}${s.endStation !== s.startStation ? ' → '+s.endStation : ''}</div>
             ${desc ? '<div class="tl-sublabel">'+desc+' · '+dur+'</div>' : ''}
@@ -891,7 +892,7 @@ function renderRoster(data) {
       <div class="card-header" onclick="toggleCard(this)">
         <span class="type-badge ${badgeClass}">${badgeLabel}</span>
         <span class="card-date">${fmtDate(act.startTime)}</span>
-        <span class="card-route">${routeText}<span style="font-size:11px;font-weight:400;color:var(--text-3)"> · ${role}</span></span>
+        <span class="card-route">${routeText}<span class="card-role"> · ${role}</span></span>
         <span class="card-time">${fmtTime(act.startTime)} – ${fmtTime(act.endTime)}</span>
         <i class="ti ti-chevron-down card-chevron"></i>
       </div>
@@ -902,7 +903,7 @@ function renderRoster(data) {
           <div class="detail-item"><label>Start</label><span>${fmtDateTime(act.startTime)}</span></div>
           <div class="detail-item"><label>End</label><span>${fmtDateTime(act.endTime)}</span></div>
         </div>
-        ${trnTags.length ? '<div class="section-label">Training tags</div><div style="font-size:12px;color:var(--text-2);margin-bottom:10px;font-family:var(--mono)">'+trnTags.join(' · ')+'</div>' : ''}
+        ${trnTags.length ? '<div class="section-label">Training tags</div><div class="card-trn-tags">'+trnTags.join(' · ')+'</div>' : ''}
         ${timelineHTML}
       </div>`;
 
