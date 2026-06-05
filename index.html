@@ -187,6 +187,26 @@
     .filter-btn:hover:not(.active) { background: var(--bg-card); color: var(--text); border-color: var(--border-active); }
     .filter-btn.active { background: var(--ram-red); color: white; border-color: transparent; }
 
+    .select-month {
+      background: var(--bg-card);
+      border: 1px solid var(--border-active);
+      color: var(--text-2);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: 20px;
+      outline: none;
+      cursor: pointer;
+      transition: all .15s;
+      margin-left: auto;
+    }
+    .select-month:hover { border-color: var(--ram-red); color: var(--text); }
+
+    @media (max-width: 640px) {
+      .select-month { margin-left: 0; width: 100%; margin-top: 4px; }
+    }
+
     .activity-list { display: flex; flex-direction: column; gap: 8px; }
 
     .activity-card {
@@ -426,6 +446,10 @@
     <button class="filter-btn" data-filter="standby">Standby</button>
     <button class="filter-btn" data-filter="training">Training</button>
     <button class="filter-btn" data-filter="other">Other</button>
+    
+    <select id="monthSelect" class="select-month">
+      <option value="all">All Months</option>
+    </select>
   </div>
 
   <div id="activityList" class="activity-list">
@@ -443,8 +467,10 @@
 
 <script>
 const activityList = document.getElementById('activityList');
+const monthSelect = document.getElementById('monthSelect');
 let allCards = [];
 let currentFilter = 'all';
+let currentMonthFilter = 'all';
 let rosterData = null;
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -547,6 +573,9 @@ function renderRoster(data) {
 
   let fc = 0, dc = 0, sc = 0, tc = 0;
   allCards = [];
+  
+  const uniqueMonths = new Set();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
   activities.forEach(act => {
     const type = classifyActivity(act);
@@ -554,6 +583,11 @@ function renderRoster(data) {
     else if (type === 'standby') sc++;
     else if (type === 'training') tc++;
     else dc++;
+
+    const actDate = new Date(act.startTime);
+    const monthKey = actDate.getUTCFullYear() + '-' + (actDate.getUTCMonth() + 1).toString().padStart(2, '0');
+    const monthLabel = monthNames[actDate.getUTCMonth()] + ' ' + actDate.getUTCFullYear();
+    uniqueMonths.add(JSON.stringify({key: monthKey, label: monthLabel}));
 
     const subs = act.activities || [];
     const flightLegs = subs.filter(s => s.type === 'flight-leg');
@@ -628,6 +662,7 @@ function renderRoster(data) {
     const card = document.createElement('div');
     card.className = 'activity-card';
     card.dataset.type = type;
+    card.dataset.month = monthKey;
     const badgeClass = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' }[type];
     const badgeLabel = { flight:'Flight', standby:'Standby', training:'Training', other:'Duty' }[type];
 
@@ -653,6 +688,16 @@ function renderRoster(data) {
     allCards.push(card);
   });
 
+  // Populate month filter dropdown dynamically
+  const sortedMonths = Array.from(uniqueMonths).map(m => JSON.parse(m)).sort((a, b) => a.key.localeCompare(b.key));
+  monthSelect.innerHTML = '<option value="all">All Months</option>';
+  sortedMonths.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.key;
+    opt.textContent = m.label;
+    monthSelect.appendChild(opt);
+  });
+
   document.getElementById('statFlights').textContent = fc;
   document.getElementById('statDuties').textContent = dc;
   document.getElementById('statStandby').textContent = sc;
@@ -662,7 +707,12 @@ function renderRoster(data) {
 
 function renderFiltered() {
   activityList.innerHTML = '';
-  const visible = allCards.filter(c => currentFilter === 'all' || c.dataset.type === currentFilter);
+  const visible = allCards.filter(c => {
+    const matchType = (currentFilter === 'all' || c.dataset.type === currentFilter);
+    const matchMonth = (currentMonthFilter === 'all' || c.dataset.month === currentMonthFilter);
+    return matchType && matchMonth;
+  });
+  
   if (!visible.length) {
     activityList.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i><p>No activities match this filter</p></div>';
   } else {
@@ -677,6 +727,11 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     currentFilter = btn.dataset.filter;
     renderFiltered();
   });
+});
+
+monthSelect.addEventListener('change', (e) => {
+  currentMonthFilter = e.target.value;
+  renderFiltered();
 });
 
 function exportIcal() {
