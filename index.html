@@ -509,16 +509,16 @@
     }
     .delay-tag.late { background: rgba(226,75,74,0.15); color: #e24b4a; }
 
-    .crew-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .crew-grid { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
 
     .crew-pill {
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 9px;
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 4px 10px 4px 5px;
+      border-radius: var(--r);
+      padding: 6px 10px;
       transition: border-color .15s;
     }
     .crew-pill:hover { border-color: var(--border-active); }
@@ -575,6 +575,93 @@
 
     .hidden { display: none !important; }
     .spin   { animation: spin 1s linear infinite; }
+
+    /* Card selection */
+    .activity-card.selected {
+      border-color: var(--ram-red);
+      background: rgba(200,16,46,0.04);
+    }
+    .card-select-cb {
+      width: 16px; height: 16px;
+      border-radius: 4px;
+      border: 1.5px solid var(--border-active);
+      background: var(--bg-input);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .activity-card.selected .card-select-cb {
+      background: var(--ram-red);
+      border-color: var(--ram-red);
+    }
+    .card-select-cb i { font-size: 11px; color: white; opacity: 0; transition: opacity .15s; }
+    .activity-card.selected .card-select-cb i { opacity: 1; }
+
+    /* Selection action toolbar */
+    .selection-bar {
+      position: sticky;
+      bottom: 1.5rem;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-active);
+      border-radius: 12px;
+      padding: 10px 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      margin-top: 16px;
+      transition: opacity .2s, transform .2s;
+    }
+    .selection-bar.invisible { opacity: 0; pointer-events: none; transform: translateY(8px); }
+    .sel-count {
+      font-size: 12px;
+      font-family: var(--mono);
+      color: var(--text-2);
+      flex: 1;
+    }
+    .sel-count strong { color: var(--text); }
+    .btn-sel {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--sans); font-size: 12px; font-weight: 600;
+      padding: 7px 14px; border-radius: var(--r);
+      border: none; cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .btn-sel i { font-size: 14px; }
+    .btn-sel-ical { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(74,158,255,0.25); }
+    .btn-sel-ical:hover { background: rgba(74,158,255,0.2); }
+    .btn-sel-csv  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(93,184,122,0.25); }
+    .btn-sel-csv:hover  { background: rgba(93,184,122,0.2); }
+    .btn-sel-clear { background: transparent; color: var(--text-3); border: 1px solid var(--border); font-weight: 500; }
+    .btn-sel-clear:hover { color: var(--text-2); border-color: var(--border-active); }
+
+    /* Totals bar */
+    .totals-bar {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 12px 16px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .totals-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--text-3); font-family: var(--mono); margin-right: 4px;
+    }
+    .totals-item {
+      display: flex; align-items: baseline; gap: 6px;
+    }
+    .totals-item .t-val {
+      font-size: 15px; font-weight: 700; font-family: var(--mono); color: var(--text);
+    }
+    .totals-item .t-lbl {
+      font-size: 10px; color: var(--text-3); font-family: var(--mono);
+    }
+    .totals-sep { width: 1px; height: 16px; background: var(--border); }
   </style>
 </head>
 <body>
@@ -652,39 +739,59 @@
       <span>Pulling background data layers...</span>
     </div>
   </div>
+
+  <div id="totalsBar" class="totals-bar hidden">
+    <span class="totals-label">Totals</span>
+    <div class="totals-item"><span class="t-val" id="totHours">—</span><span class="t-lbl">Block hrs</span></div>
+    <div class="totals-sep"></div>
+    <div class="totals-item"><span class="t-val" id="totDuty">—</span><span class="t-lbl">Duty hrs</span></div>
+    <div class="totals-sep"></div>
+    <div class="totals-item"><span class="t-val" id="totFlights">—</span><span class="t-lbl">Flights</span></div>
+    <div class="totals-sep"></div>
+    <div class="totals-item"><span class="t-val" id="totActivities">—</span><span class="t-lbl">Activities</span></div>
+  </div>
+
+  <div id="selectionBar" class="selection-bar invisible">
+    <span class="sel-count"><strong id="selCount">0</strong> selected</span>
+    <button class="btn-sel btn-sel-ical" onclick="exportSelectedIcal()"><i class="ti ti-calendar-down"></i> Calendar (.ics)</button>
+    <button class="btn-sel btn-sel-csv" onclick="exportSelectedCsv()"><i class="ti ti-file-spreadsheet"></i> Export CSV</button>
+    <button class="btn-sel btn-sel-clear" onclick="clearSelection()"><i class="ti ti-x"></i> Clear</button>
+  </div>
 </div>
 
 <script>
-const activityList = document.getElementById('activityList');
-const monthSelect = document.getElementById('monthSelect');
-const pinOverlay = document.getElementById('pinOverlay');
-const appContainer = document.getElementById('appContainer');
-const pinInput = document.getElementById('pinInput');
-const errorMsg = document.getElementById('errorMsg');
+const activityList   = document.getElementById('activityList');
+const monthSelect    = document.getElementById('monthSelect');
+const pinOverlay     = document.getElementById('pinOverlay');
+const appContainer   = document.getElementById('appContainer');
+const pinInput       = document.getElementById('pinInput');
+const errorMsg       = document.getElementById('errorMsg');
+const selectionBar   = document.getElementById('selectionBar');
+const selCountEl     = document.getElementById('selCount');
+const totalsBar      = document.getElementById('totalsBar');
 
-let allCards = [];
-let currentFilter = 'all';
+let allCards       = [];   // { el, act, type, month, durationMinutes, blockMinutes }
+let selectedIds    = new Set();
+let currentFilter  = 'all';
 let currentMonthFilter = 'all';
-let rosterData = null;
+let rosterData     = null;
+let cardIdCounter  = 0;
 
+// ── PIN ────────────────────────────────────────────────────────────────────
 function pressKey(num) {
   errorMsg.classList.add('hidden');
   if (pinInput.value.length < 6) pinInput.value += num;
 }
-
 function pressDelete() {
   errorMsg.classList.add('hidden');
   pinInput.value = pinInput.value.slice(0, -1);
 }
-
 function pressClear() {
   errorMsg.classList.add('hidden');
   pinInput.value = '';
 }
-
 function verifyPinCode() {
-  const inputVal = pinInput.value;
-  if (inputVal === "080425") {
+  if (pinInput.value === "080425") {
     errorMsg.classList.add('hidden');
     pinOverlay.classList.add('hidden');
     appContainer.style.display = 'block';
@@ -695,20 +802,14 @@ function verifyPinCode() {
   }
 }
 
+// ── DATA FETCH ─────────────────────────────────────────────────────────────
 async function initializeRosterSync() {
   try {
     const response = await fetch('roster.json');
-    if (response.ok) {
-      const data = await response.json();
-      renderRoster(data);
-    } else {
-      showErrorState();
-    }
-  } catch (error) {
-    showErrorState();
-  }
+    if (response.ok) { renderRoster(await response.json()); }
+    else showErrorState();
+  } catch { showErrorState(); }
 }
-
 function showErrorState() {
   document.getElementById('crewLabel').textContent = "Sync pending";
   activityList.innerHTML = `
@@ -719,6 +820,7 @@ function showErrorState() {
     </div>`;
 }
 
+// ── FORMATTERS ─────────────────────────────────────────────────────────────
 function fmtTime(iso) {
   if (!iso) return '--';
   const d = new Date(iso);
@@ -728,7 +830,8 @@ function fmtDateTime(iso) {
   if (!iso) return '--';
   const d = new Date(iso);
   const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return d.getUTCDate().toString().padStart(2,'0') + ' ' + M[d.getUTCMonth()] + ' ' + d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
+  return d.getUTCDate().toString().padStart(2,'0') + ' ' + M[d.getUTCMonth()] + ' '
+       + d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
 }
 function fmtDate(iso) {
   if (!iso) return '--';
@@ -740,6 +843,12 @@ function fmtDuration(mins) {
   if (!mins && mins !== 0) return '--';
   return Math.floor(mins/60) + ':' + (mins%60).toString().padStart(2,'0') + 'h';
 }
+function fmtHoursDecimal(mins) {
+  if (!mins) return '0:00h';
+  return Math.floor(mins/60) + ':' + (mins%60).toString().padStart(2,'0') + 'h';
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
 function avClass(pos) {
   const p = (pos||'').toUpperCase();
   if (p === 'CDB') return 'av-cdb';
@@ -758,6 +867,17 @@ function classifyActivity(act) {
   if (subs.some(s => s.isStandby)) return 'standby';
   if (subs.some(s => s.isTraining || s.activityCode?.group === 'SIM' || s.activityCode?.group === 'GTR')) return 'training';
   return 'other';
+}
+
+// Entry type for CSV: flight, simulator, deadhead, reserve
+function entryType(act, type) {
+  const subs = act.activities || [];
+  if (subs.some(s => s.activityCode?.group === 'SIM')) return 'Simulator';
+  if (subs.some(s => s.activityCode?.group === 'DH' || (s.activityCode?.id||'').toUpperCase().includes('DH'))) return 'Deadhead';
+  if (type === 'standby') return 'Reserve';
+  if (type === 'flight') return 'Flight';
+  if (type === 'training') return 'Simulator';
+  return 'Other';
 }
 
 function buildCrewHTML(crew, trainingTags) {
@@ -780,12 +900,13 @@ function buildCrewHTML(crew, trainingTags) {
   return html + '</div>';
 }
 
+// ── RENDER ROSTER ──────────────────────────────────────────────────────────
 function renderRoster(data) {
   rosterData = data;
   document.getElementById('icalBtn').classList.remove('hidden');
-  const entity = data.entity || data;
+  const entity     = data.entity || data;
   const activities = entity.activities || [];
-  const crewId = entity.crewId || '';
+  const crewId     = entity.crewId || '';
 
   document.getElementById('crewLabel').textContent = crewId
     ? 'Crew ID: ' + crewId + ' · ' + activities.length + ' activities'
@@ -793,28 +914,24 @@ function renderRoster(data) {
   document.getElementById('statsGrid').classList.remove('hidden');
   document.getElementById('filterBar').classList.remove('hidden');
 
-  let fc = 0, dc = 0, sc = 0, tc = 0;
   allCards = [];
-  
   const uniqueMonths = new Set();
-  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthNames   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
   activities.forEach(act => {
-    const type = classifyActivity(act);
-    if (type === 'flight') fc++;
-    else if (type === 'standby') sc++;
-    else if (type === 'training') tc++;
-    else dc++;
-
-    const actDate = new Date(act.startTime);
-    const monthKey = actDate.getUTCFullYear() + '-' + (actDate.getUTCMonth() + 1).toString().padStart(2, '0');
-    const monthLabel = monthNames[actDate.getUTCMonth()] + ' ' + actDate.getUTCFullYear();
+    const type      = classifyActivity(act);
+    const actDate   = new Date(act.startTime);
+    const monthKey  = actDate.getUTCFullYear() + '-' + (actDate.getUTCMonth()+1).toString().padStart(2,'0');
+    const monthLabel= monthNames[actDate.getUTCMonth()] + ' ' + actDate.getUTCFullYear();
     uniqueMonths.add(JSON.stringify({key: monthKey, label: monthLabel}));
 
-    const subs = act.activities || [];
+    const subs       = act.activities || [];
     const flightLegs = subs.filter(s => s.type === 'flight-leg');
-    const role = act.key?.role || '';
-    const keyName = act.key?.name || '';
+    const role       = act.key?.role || '';
+    const keyName    = act.key?.name || '';
+
+    // Block time = sum of all flight-leg blockTimeMinutes (or durationMinutes fallback)
+    const blockMins  = flightLegs.reduce((acc, l) => acc + (l.blockTimeMinutes || l.durationMinutes || 0), 0);
 
     let routeText = act.startStation + ' → ' + act.endStation;
     if (flightLegs.length > 1) {
@@ -827,21 +944,21 @@ function renderRoster(data) {
     let timelineHTML = '<div class="section-label">Timeline</div><div class="timeline">';
 
     subs.filter(s => !SKIP.has(s.type)).forEach(s => {
-      const st = fmtDateTime(s.startTime);
-      const et = fmtDateTime(s.endTime);
+      const st  = fmtDateTime(s.startTime);
+      const et  = fmtDateTime(s.endTime);
       const dur = fmtDuration(s.durationMinutes);
 
       if (s.type === 'flight-leg') {
-        const fn = (s.carrier||'') + (s.flightNumber||s.activityCode?.id||'');
-        const schSt = s.scheduledStartTime ? fmtTime(s.scheduledStartTime) : null;
-        const schEt = s.scheduledEndTime ? fmtTime(s.scheduledEndTime) : null;
-        const actSt = fmtTime(s.startTime);
-        const actEt = fmtTime(s.endTime);
-        const status = s.statusLabel || '';
-        const isLate = status.includes('+');
-        const delayBadge = status ? `<span class="delay-tag ${isLate ? 'late' : ''}">${status}</span>` : '';
-        const schedLine = schSt ? `<div class="sched-line">Sched: ${schSt} – ${schEt}</div>` : '';
-        const trnTags = (s.trainingTags||[]).map(t => t.descr).join(', ');
+        const fn      = (s.carrier||'') + (s.flightNumber||s.activityCode?.id||'');
+        const schSt   = s.scheduledStartTime ? fmtTime(s.scheduledStartTime) : null;
+        const schEt   = s.scheduledEndTime   ? fmtTime(s.scheduledEndTime)   : null;
+        const actSt   = fmtTime(s.startTime);
+        const actEt   = fmtTime(s.endTime);
+        const status  = s.statusLabel || '';
+        const isLate  = status.includes('+');
+        const delayBadge = status ? `<span class="delay-tag ${isLate?'late':''}">${status}</span>` : '';
+        const schedLine  = schSt ? `<div class="sched-line">Sched: ${schSt} – ${schEt}</div>` : '';
+        const trnTags    = (s.trainingTags||[]).map(t => t.descr).join(', ');
         timelineHTML += `<div class="tl-row flight-row">
           <div class="tl-type"><span class="fn-tag">${fn}</span>${delayBadge}<br><span class="tl-date">${fmtDate(s.startTime)}</span></div>
           <div>
@@ -857,9 +974,7 @@ function renderRoster(data) {
       } else if (s.type === 'layover') {
         timelineHTML += `<div class="tl-row layover-row">
           <div class="tl-type tl-type--layover">Layover</div>
-          <div>
-            <div class="tl-label">${s.startStation} · ${dur}</div>
-          </div>
+          <div><div class="tl-label">${s.startStation} · ${dur}</div></div>
           <div class="tl-time">${st}<br>${et}</div>
         </div>`;
 
@@ -879,22 +994,27 @@ function renderRoster(data) {
     });
     timelineHTML += '</div>';
 
-    const trnTags = [...new Set(subs.flatMap(s => (s.trainingTags||[]).map(t => t.descr)))].filter(Boolean);
-
-    const card = document.createElement('div');
-    card.className = 'activity-card';
-    card.dataset.type = type;
-    card.dataset.month = monthKey;
+    const trnTags    = [...new Set(subs.flatMap(s => (s.trainingTags||[]).map(t => t.descr)))].filter(Boolean);
     const badgeClass = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' }[type];
     const badgeLabel = { flight:'Flight', standby:'Standby', training:'Training', other:'Duty' }[type];
 
+    const cardId = ++cardIdCounter;
+    const card   = document.createElement('div');
+    card.className    = 'activity-card';
+    card.dataset.type = type;
+    card.dataset.month= monthKey;
+    card.dataset.id   = cardId;
+
     card.innerHTML = `
-      <div class="card-header" onclick="toggleCard(this)">
-        <span class="type-badge ${badgeClass}">${badgeLabel}</span>
-        <span class="card-date">${fmtDate(act.startTime)}</span>
-        <span class="card-route">${routeText}<span class="card-role"> · ${role}</span></span>
-        <span class="card-time">${fmtTime(act.startTime)} – ${fmtTime(act.endTime)}</span>
-        <i class="ti ti-chevron-down card-chevron"></i>
+      <div class="card-header">
+        <div class="card-select-cb" onclick="toggleSelect(event, ${cardId})">
+          <i class="ti ti-check"></i>
+        </div>
+        <span class="type-badge ${badgeClass}" onclick="toggleCard(this.closest('.card-header').nextElementSibling, this.closest('.card-header').querySelector('.card-chevron'))">${badgeLabel}</span>
+        <span class="card-date" onclick="toggleCard(this.closest('.card-header').nextElementSibling, this.closest('.card-header').querySelector('.card-chevron'))">${fmtDate(act.startTime)}</span>
+        <span class="card-route" onclick="toggleCard(this.closest('.card-header').nextElementSibling, this.closest('.card-header').querySelector('.card-chevron'))">${routeText}<span class="card-role"> · ${role}</span></span>
+        <span class="card-time" onclick="toggleCard(this.closest('.card-header').nextElementSibling, this.closest('.card-header').querySelector('.card-chevron'))">${fmtTime(act.startTime)} – ${fmtTime(act.endTime)}</span>
+        <i class="ti ti-chevron-down card-chevron" onclick="toggleCard(this.closest('.card-header').nextElementSibling, this)"></i>
       </div>
       <div class="card-body">
         <div class="detail-grid">
@@ -907,40 +1027,64 @@ function renderRoster(data) {
         ${timelineHTML}
       </div>`;
 
-    allCards.push(card);
+    allCards.push({ el: card, act, type, month: monthKey, durationMinutes: act.durationMinutes || 0, blockMinutes: blockMins });
   });
 
-  const sortedMonths = Array.from(uniqueMonths).map(m => JSON.parse(m)).sort((a, b) => a.key.localeCompare(b.key));
+  const sortedMonths = Array.from(uniqueMonths).map(m => JSON.parse(m)).sort((a,b) => a.key.localeCompare(b.key));
   monthSelect.innerHTML = '<option value="all">All Months</option>';
   sortedMonths.forEach(m => {
     const opt = document.createElement('option');
-    opt.value = m.key;
-    opt.textContent = m.label;
+    opt.value = m.key; opt.textContent = m.label;
     monthSelect.appendChild(opt);
   });
 
-  document.getElementById('statFlights').textContent = fc;
-  document.getElementById('statDuties').textContent = dc;
-  document.getElementById('statStandby').textContent = sc;
-  document.getElementById('statTraining').textContent = tc;
   renderFiltered();
 }
 
+// ── RENDER FILTERED ────────────────────────────────────────────────────────
 function renderFiltered() {
   activityList.innerHTML = '';
   const visible = allCards.filter(c => {
-    const matchType = (currentFilter === 'all' || c.dataset.type === currentFilter);
-    const matchMonth = (currentMonthFilter === 'all' || c.dataset.month === currentMonthFilter);
+    const matchType  = (currentFilter === 'all' || c.type === currentFilter);
+    const matchMonth = (currentMonthFilter === 'all' || c.month === currentMonthFilter);
     return matchType && matchMonth;
   });
-  
+
   if (!visible.length) {
     activityList.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i><p>No activities match this filter</p></div>';
+    totalsBar.classList.add('hidden');
   } else {
-    visible.forEach(c => activityList.appendChild(c));
+    visible.forEach(c => activityList.appendChild(c.el));
+    updateTotals(visible);
+    totalsBar.classList.remove('hidden');
   }
+  updateStats(visible);
 }
 
+// ── STATS (filter-aware) ───────────────────────────────────────────────────
+function updateStats(visible) {
+  const fc = visible.filter(c => c.type === 'flight').length;
+  const dc = visible.filter(c => c.type === 'other').length;
+  const sc = visible.filter(c => c.type === 'standby').length;
+  const tc = visible.filter(c => c.type === 'training').length;
+  document.getElementById('statFlights').textContent  = fc;
+  document.getElementById('statDuties').textContent   = dc;
+  document.getElementById('statStandby').textContent  = sc;
+  document.getElementById('statTraining').textContent = tc;
+}
+
+// ── TOTALS ─────────────────────────────────────────────────────────────────
+function updateTotals(visible) {
+  const totalDutyMins  = visible.reduce((a,c) => a + c.durationMinutes, 0);
+  const totalBlockMins = visible.reduce((a,c) => a + c.blockMinutes, 0);
+  const totalFlights   = visible.filter(c => c.type === 'flight').length;
+  document.getElementById('totHours').textContent     = fmtHoursDecimal(totalBlockMins);
+  document.getElementById('totDuty').textContent      = fmtHoursDecimal(totalDutyMins);
+  document.getElementById('totFlights').textContent   = totalFlights;
+  document.getElementById('totActivities').textContent= visible.length;
+}
+
+// ── FILTER BUTTONS ─────────────────────────────────────────────────────────
 document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -949,66 +1093,93 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     renderFiltered();
   });
 });
-
-monthSelect.addEventListener('change', (e) => {
+monthSelect.addEventListener('change', e => {
   currentMonthFilter = e.target.value;
   renderFiltered();
 });
 
+// ── CARD TOGGLE ────────────────────────────────────────────────────────────
+function toggleCard(body, chevron) {
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+
+// ── SELECTION ──────────────────────────────────────────────────────────────
+function toggleSelect(e, id) {
+  e.stopPropagation();
+  const card = allCards.find(c => c.el.dataset.id == id);
+  if (!card) return;
+  if (selectedIds.has(id)) {
+    selectedIds.delete(id);
+    card.el.classList.remove('selected');
+  } else {
+    selectedIds.add(id);
+    card.el.classList.add('selected');
+  }
+  updateSelectionBar();
+}
+function updateSelectionBar() {
+  selCountEl.textContent = selectedIds.size;
+  selectionBar.classList.toggle('invisible', selectedIds.size === 0);
+}
+function clearSelection() {
+  selectedIds.forEach(id => {
+    const card = allCards.find(c => c.el.dataset.id == id);
+    if (card) card.el.classList.remove('selected');
+  });
+  selectedIds.clear();
+  updateSelectionBar();
+}
+function getSelectedCards() {
+  return allCards.filter(c => selectedIds.has(+c.el.dataset.id));
+}
+
+// ── iCAL EXPORT (all or selected) ─────────────────────────────────────────
 function exportIcal() {
   if (!rosterData) return;
   const entity = rosterData.entity || rosterData;
-  const activities = entity.activities || [];
-  const crewId = entity.crewId || 'CREW';
-
+  _doExportIcal(entity.activities || [], entity.crewId || 'CREW');
+}
+function exportSelectedIcal() {
+  if (!rosterData) return;
+  const entity = rosterData.entity || rosterData;
+  const selActs = getSelectedCards().map(c => c.act);
+  if (!selActs.length) return;
+  _doExportIcal(selActs, entity.crewId || 'CREW', '_selected');
+}
+function _doExportIcal(activities, crewId, suffix = '') {
   function icsDate(iso) {
     if (!iso) return null;
-    const d = new Date(iso);
-    const pad = n => n.toString().padStart(2, '0');
-    return d.getUTCFullYear().toString()
-      + pad(d.getUTCMonth() + 1)
-      + pad(d.getUTCDate())
-      + 'T'
-      + pad(d.getUTCHours())
-      + pad(d.getUTCMinutes())
-      + '00Z';
+    const d   = new Date(iso);
+    const pad = n => n.toString().padStart(2,'0');
+    return d.getUTCFullYear() + pad(d.getUTCMonth()+1) + pad(d.getUTCDate())
+         + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + '00Z';
   }
-
   function fold(line) {
     const out = [];
-    while (line.length > 75) {
-      out.push(line.slice(0, 75));
-      line = ' ' + line.slice(75);
-    }
-    out.push(line);
-    return out.join('\r\n');
+    while (line.length > 75) { out.push(line.slice(0,75)); line = ' ' + line.slice(75); }
+    out.push(line); return out.join('\r\n');
   }
-
   function icsEscape(str) {
-    return (str || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+    return (str||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
   }
 
   const now = icsDate(new Date().toISOString());
   let cal = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//RAM Roster Viewer//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-    fold('X-WR-CALNAME:RAM Roster – ' + crewId),
-    'X-WR-TIMEZONE:UTC',
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RAM Roster Viewer//EN',
+    'CALSCALE:GREGORIAN','METHOD:PUBLISH',
+    fold('X-WR-CALNAME:RAM Roster – ' + crewId),'X-WR-TIMEZONE:UTC',
   ];
 
   activities.forEach((act, idx) => {
-    const type = classifyActivity(act);
-    const subs = act.activities || [];
+    const type       = classifyActivity(act);
+    const subs       = act.activities || [];
     const flightLegs = subs.filter(s => s.type === 'flight-leg');
-    const role = act.key?.role || '';
-    const keyName = act.key?.name || '';
-    const uid = 'ram-' + crewId + '-' + idx + '-' + (act.startTime || idx) + '@ram-roster';
-
-    const dtstart = icsDate(act.startTime);
-    const dtend   = icsDate(act.endTime);
+    const role       = act.key?.role || '';
+    const keyName    = act.key?.name || '';
+    const uid        = 'ram-' + crewId + '-' + idx + '-' + (act.startTime||idx) + '@ram-roster';
+    const dtstart    = icsDate(act.startTime);
+    const dtend      = icsDate(act.endTime);
     if (!dtstart || !dtend) return;
 
     const typeLabel = { flight:'✈', standby:'⏳', training:'📚', other:'🗓' }[type] || '';
@@ -1018,23 +1189,20 @@ function exportIcal() {
       stops.push(flightLegs[flightLegs.length-1].endStation);
       route = stops.join(' → ');
     }
-    const summary = typeLabel + ' ' + route + (role ? ' (' + role + ')' : '');
+    const summary  = typeLabel + ' ' + route + (role ? ' ('+role+')' : '');
     const location = act.startStation || '';
-
     const descParts = [];
     if (keyName) descParts.push('Trip: ' + keyName);
     if (act.durationMinutes) descParts.push('Duration: ' + fmtDuration(act.durationMinutes));
     flightLegs.forEach(l => {
-      const fn = (l.carrier || '') + (l.flightNumber || l.activityCode?.id || '');
-      const legLine = fn + '  ' + l.startStation + ' → ' + l.endStation
+      const fn = (l.carrier||'') + (l.flightNumber||l.activityCode?.id||'');
+      descParts.push(fn + '  ' + l.startStation + ' → ' + l.endStation
         + '  ' + fmtTime(l.startTime) + '–' + fmtTime(l.endTime)
         + (l.aircraftType ? '  ' + l.aircraftType : '')
-        + (l.statusLabel ? '  [' + l.statusLabel + ']' : '');
-      descParts.push(legLine);
+        + (l.statusLabel  ? '  [' + l.statusLabel + ']' : ''));
     });
-    const trnTags = [...new Set(subs.flatMap(s => (s.trainingTags || []).map(t => t.descr)))].filter(Boolean);
+    const trnTags = [...new Set(subs.flatMap(s => (s.trainingTags||[]).map(t => t.descr)))].filter(Boolean);
     if (trnTags.length) descParts.push('Training: ' + trnTags.join(', '));
-    const description = descParts.join('\\n');
 
     cal.push('BEGIN:VEVENT');
     cal.push(fold('UID:' + icsEscape(uid)));
@@ -1043,26 +1211,72 @@ function exportIcal() {
     cal.push('DTEND:' + dtend);
     cal.push(fold('SUMMARY:' + icsEscape(summary)));
     if (location) cal.push(fold('LOCATION:' + icsEscape(location)));
-    if (description) cal.push(fold('DESCRIPTION:' + description));
+    if (descParts.length) cal.push(fold('DESCRIPTION:' + descParts.join('\\n')));
     cal.push('END:VEVENT');
   });
-
   cal.push('END:VCALENDAR');
 
-  const blob = new Blob([cal.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'ram_roster_' + crewId + '.ics';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  downloadBlob(cal.join('\r\n'), 'text/calendar;charset=utf-8', 'ram_roster_' + crewId + suffix + '.ics');
 }
 
-// Interactive card toggle animation hook
-function toggleCard(h) {
-  h.nextElementSibling.classList.toggle('open');
-  h.querySelector('.card-chevron').classList.toggle('open');
+// ── CSV EXPORT (selected) ──────────────────────────────────────────────────
+function exportSelectedCsv() {
+  if (!rosterData) return;
+  const entity  = rosterData.entity || rosterData;
+  const crewId  = entity.crewId || 'CREW';
+  const cards   = getSelectedCards();
+  if (!cards.length) return;
+
+  const csvEsc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
+  const rows   = [
+    ['Date','Flight Number','From','To','Sched Dep','Sched Arr','Actual Dep','Actual Arr','Entry Type','Aircraft','Block Time','Duration','Trip Code','Role']
+  ];
+
+  cards.forEach(({ act, type }) => {
+    const subs       = act.activities || [];
+    const flightLegs = subs.filter(s => s.type === 'flight-leg');
+    const role       = act.key?.role || '';
+    const keyName    = act.key?.name || '';
+    const eType      = entryType(act, type);
+
+    if (flightLegs.length > 0) {
+      // One row per leg
+      flightLegs.forEach(l => {
+        const fn      = (l.carrier||'') + (l.flightNumber||l.activityCode?.id||'');
+        const schDep  = l.scheduledStartTime ? fmtDateTime(l.scheduledStartTime) : fmtDateTime(l.startTime);
+        const schArr  = l.scheduledEndTime   ? fmtDateTime(l.scheduledEndTime)   : fmtDateTime(l.endTime);
+        const actDep  = fmtDateTime(l.startTime);
+        const actArr  = fmtDateTime(l.endTime);
+        const ac      = l.aircraftType || '';
+        const block   = fmtDuration(l.blockTimeMinutes || l.durationMinutes);
+        rows.push([
+          fmtDate(l.startTime), fn, l.startStation, l.endStation,
+          schDep, schArr, actDep, actArr, eType, ac, block, '', keyName, role
+        ]);
+      });
+    } else {
+      // Non-flight: one summary row
+      rows.push([
+        fmtDate(act.startTime), '', act.startStation, act.endStation,
+        fmtDateTime(act.startTime), fmtDateTime(act.endTime),
+        fmtDateTime(act.startTime), fmtDateTime(act.endTime),
+        eType, '', '', fmtDuration(act.durationMinutes), keyName, role
+      ]);
+    }
+  });
+
+  const csv = rows.map(r => r.map(csvEsc).join(',')).join('\r\n');
+  downloadBlob(csv, 'text/csv;charset=utf-8', 'ram_roster_' + crewId + '_export.csv');
+}
+
+// ── DOWNLOAD HELPER ────────────────────────────────────────────────────────
+function downloadBlob(content, mime, filename) {
+  const blob = new Blob([content], { type: mime });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
 }
 </script>
 </body>
