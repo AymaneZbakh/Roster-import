@@ -439,7 +439,7 @@
 
     .detail-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 12px;
       margin-bottom: 16px;
     }
@@ -715,7 +715,7 @@
   <div id="statsGrid" class="stats-grid hidden">
     <div class="stat"><div class="stat-label">Flights</div><div class="stat-value" id="statFlights">0</div></div>
     <div class="stat"><div class="stat-label">Duties</div><div class="stat-value" id="statDuties">0</div></div>
-    <div class="stat"><div class="stat-label">Standby</div><div class="stat-value" id="statStandby">0</div></div>
+    <div class="stat"><div class="stat-label">Reserve</div><div class="stat-value" id="statStandby">0</div></div>
     <div class="stat"><div class="stat-label">Training</div><div class="stat-value" id="statTraining">0</div></div>
   </div>
 
@@ -723,7 +723,7 @@
     <span class="filters-label">Show:</span>
     <button class="filter-btn active" data-filter="all">All</button>
     <button class="filter-btn" data-filter="flight">Flights</button>
-    <button class="filter-btn" data-filter="standby">Standby</button>
+    <button class="filter-btn" data-filter="standby">Reserve</button>
     <button class="filter-btn" data-filter="training">Training</button>
     <button class="filter-btn" data-filter="other">Other</button>
     
@@ -842,6 +842,23 @@ function fmtDate(iso) {
 function fmtDuration(mins) {
   if (!mins && mins !== 0) return '--';
   return Math.floor(mins/60) + ':' + (mins%60).toString().padStart(2,'0') + 'h';
+}
+// CSV-specific formatters: dd/mm/yyyy and HH:mm
+function csvDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.getUTCDate().toString().padStart(2,'0') + '/'
+       + (d.getUTCMonth()+1).toString().padStart(2,'0') + '/'
+       + d.getUTCFullYear();
+}
+function csvTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
+}
+function csvDateTime(iso) {
+  if (!iso) return '';
+  return csvDate(iso) + ' ' + csvTime(iso);
 }
 function fmtHoursDecimal(mins) {
   if (!mins) return '0:00h';
@@ -996,7 +1013,7 @@ function renderRoster(data) {
 
     const trnTags    = [...new Set(subs.flatMap(s => (s.trainingTags||[]).map(t => t.descr)))].filter(Boolean);
     const badgeClass = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' }[type];
-    const badgeLabel = { flight:'Flight', standby:'Standby', training:'Training', other:'Duty' }[type];
+    const badgeLabel = { flight:'Flight', standby:'Reserve', training:'Training', other:'Duty' }[type];
 
     const cardId = ++cardIdCounter;
     const card   = document.createElement('div');
@@ -1006,24 +1023,22 @@ function renderRoster(data) {
     card.dataset.id   = cardId;
 
     card.innerHTML = `
-      <div class="card-header">
+      <div class="card-header" onclick="toggleCard(this.nextElementSibling, this.querySelector('.card-chevron'))">
         <div class="card-select-cb" onclick="toggleSelect(event, ${cardId})">
           <i class="ti ti-check"></i>
         </div>
-        <span class="type-badge ${badgeClass}" onclick="toggleCard(this.closest('.card-header').nextElementSibling, this.closest('.card-header').querySelector('.card-chevron'))">${badgeLabel}</span>
-        <span class="card-date" onclick="toggleCard(this.closest('.card-header').nextElementSibling, this.closest('.card-header').querySelector('.card-chevron'))">${fmtDate(act.startTime)}</span>
-        <span class="card-route" onclick="toggleCard(this.closest('.card-header').nextElementSibling, this.closest('.card-header').querySelector('.card-chevron'))">${routeText}<span class="card-role"> · ${role}</span></span>
-        <span class="card-time" onclick="toggleCard(this.closest('.card-header').nextElementSibling, this.closest('.card-header').querySelector('.card-chevron'))">${fmtTime(act.startTime)} – ${fmtTime(act.endTime)}</span>
-        <i class="ti ti-chevron-down card-chevron" onclick="toggleCard(this.closest('.card-header').nextElementSibling, this)"></i>
+        <span class="type-badge ${badgeClass}">${badgeLabel}</span>
+        <span class="card-date">${fmtDate(act.startTime)}</span>
+        <span class="card-route">${routeText}<span class="card-role"> · ${role}</span></span>
+        <span class="card-time">${fmtTime(act.startTime)} – ${fmtTime(act.endTime)}</span>
+        <i class="ti ti-chevron-down card-chevron"></i>
       </div>
       <div class="card-body">
         <div class="detail-grid">
-          <div class="detail-item"><label>Trip / code</label><span>${keyName}</span></div>
           <div class="detail-item"><label>Duration</label><span>${fmtDuration(act.durationMinutes)}</span></div>
           <div class="detail-item"><label>Start</label><span>${fmtDateTime(act.startTime)}</span></div>
           <div class="detail-item"><label>End</label><span>${fmtDateTime(act.endTime)}</span></div>
         </div>
-        ${trnTags.length ? '<div class="section-label">Training tags</div><div class="card-trn-tags">'+trnTags.join(' · ')+'</div>' : ''}
         ${timelineHTML}
       </div>`;
 
@@ -1182,7 +1197,7 @@ function _doExportIcal(activities, crewId, suffix = '') {
     const dtend      = icsDate(act.endTime);
     if (!dtstart || !dtend) return;
 
-    const typeLabel = { flight:'✈', standby:'⏳', training:'📚', other:'🗓' }[type] || '';
+    const typeLabel = { flight:'✈', standby:'🔁', training:'📚', other:'🗓' }[type] || '';
     let route = act.startStation + ' → ' + act.endStation;
     if (flightLegs.length > 1) {
       const stops = [...new Set(flightLegs.map(l => l.startStation))];
@@ -1229,7 +1244,7 @@ function exportSelectedCsv() {
 
   const csvEsc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
   const rows   = [
-    ['Date','Flight Number','From','To','Sched Dep','Sched Arr','Actual Dep','Actual Arr','Entry Type','Aircraft','Block Time','Duration','Trip Code','Role']
+    ['Date','Flight Number','From','To','Sched Dep','Sched Arr','Actual Dep','Actual Arr','Entry Type','Aircraft','Registration','Block Time','Duration','Trip Code','Role']
   ];
 
   cards.forEach(({ act, type }) => {
@@ -1243,23 +1258,24 @@ function exportSelectedCsv() {
       // One row per leg
       flightLegs.forEach(l => {
         const fn      = (l.carrier||'') + (l.flightNumber||l.activityCode?.id||'');
-        const schDep  = l.scheduledStartTime ? fmtDateTime(l.scheduledStartTime) : fmtDateTime(l.startTime);
-        const schArr  = l.scheduledEndTime   ? fmtDateTime(l.scheduledEndTime)   : fmtDateTime(l.endTime);
-        const actDep  = fmtDateTime(l.startTime);
-        const actArr  = fmtDateTime(l.endTime);
+        const schDep  = l.scheduledStartTime ? csvDateTime(l.scheduledStartTime) : csvDateTime(l.startTime);
+        const schArr  = l.scheduledEndTime   ? csvDateTime(l.scheduledEndTime)   : csvDateTime(l.endTime);
+        const actDep  = csvDateTime(l.startTime);
+        const actArr  = csvDateTime(l.endTime);
         const ac      = l.aircraftType || '';
+        const reg     = l.tail || '';
         const block   = fmtDuration(l.blockTimeMinutes || l.durationMinutes);
         rows.push([
-          fmtDate(l.startTime), fn, l.startStation, l.endStation,
-          schDep, schArr, actDep, actArr, eType, ac, block, '', keyName, role
+          csvDate(l.startTime), fn, l.startStation, l.endStation,
+          schDep, schArr, actDep, actArr, eType, ac, reg, block, '', keyName, role
         ]);
       });
     } else {
       // Non-flight: one summary row
       rows.push([
-        fmtDate(act.startTime), '', act.startStation, act.endStation,
-        fmtDateTime(act.startTime), fmtDateTime(act.endTime),
-        fmtDateTime(act.startTime), fmtDateTime(act.endTime),
+        csvDate(act.startTime), '', act.startStation, act.endStation,
+        csvDateTime(act.startTime), csvDateTime(act.endTime),
+        csvDateTime(act.startTime), csvDateTime(act.endTime),
         eType, '', '', fmtDuration(act.durationMinutes), keyName, role
       ]);
     }
