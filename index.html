@@ -1258,10 +1258,10 @@ function exportSelectedCsv() {
       // One row per leg
       flightLegs.forEach(l => {
         const fn      = (l.carrier||'') + (l.flightNumber||l.activityCode?.id||'');
-        const schDep  = l.scheduledStartTime ? csvDateTime(l.scheduledStartTime) : csvDateTime(l.startTime);
-        const schArr  = l.scheduledEndTime   ? csvDateTime(l.scheduledEndTime)   : csvDateTime(l.endTime);
-        const actDep  = csvDateTime(l.startTime);
-        const actArr  = csvDateTime(l.endTime);
+        const schDep  = l.scheduledStartTime ? csvTime(l.scheduledStartTime) : csvTime(l.startTime);
+        const schArr  = l.scheduledEndTime   ? csvTime(l.scheduledEndTime)   : csvTime(l.endTime);
+        const actDep  = csvTime(l.startTime);
+        const actArr  = csvTime(l.endTime);
         const ac      = l.aircraftType || '';
         const reg     = l.tail || '';
         const block   = fmtDuration(l.blockTimeMinutes || l.durationMinutes);
@@ -1273,9 +1273,9 @@ function exportSelectedCsv() {
     } else {
       // Non-flight: one summary row
       rows.push([
-        csvDate(act.startTime), '', act.startStation, act.endStation,
-        csvDateTime(act.startTime), csvDateTime(act.endTime),
-        csvDateTime(act.startTime), csvDateTime(act.endTime),
+        fmtDate(act.startTime), '', act.startStation, act.endStation,
+        csvTime(act.startTime), csvTime(act.endTime),
+        csvTime(act.startTime), csvTime(act.endTime),
         eType, '', '', fmtDuration(act.durationMinutes), keyName, role
       ]);
     }
