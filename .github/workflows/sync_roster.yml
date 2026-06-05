@@ -2,8 +2,8 @@ name: Automated RAM Roster Sync
 
 on:
   schedule:
-    - cron: '0 4 * * *' # Runs automatically every single day at 04:00 AM UTC
-  workflow_dispatch:   # Also adds a manual "Run Now" button inside your GitHub dashboard
+    - cron: '0 4 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -21,10 +21,12 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install Network Requests Library
-      run: pip install requests
+    - name: Install Browser Dependencies
+      run: |
+        pip install playwright
+        playwright install chromium
 
-    - name: Pull Live Roster Data
+    - name: Run Automated Browser Login
       env:
         CREW_USER: ${{ secrets.RAM_USER }}
         CREW_PASS: ${{ secrets.RAM_PASS }}
@@ -32,34 +34,50 @@ jobs:
         python - <<EOF
         import os
         import json
-        import requests
-        import base64
+        from playwright.sync_api import sync_playwright
 
-        url = "https://crewaccess.ram.jepphost.com/access/rs/crew/roster/v1"
         username = os.environ.get("CREW_USER")
         password = os.environ.get("CREW_PASS")
 
-        # Encode credentials for standard authentication
-        credentials = f"{username}:{password}"
-        encoded_creds = base64.b64encode(credentials.encode()).decode()
+        with sync_playwright() as p:
+            print("Launching automated browser...")
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
 
-        headers = {
-            "Authorization": f"Basic {encoded_creds}",
-            "Accept": "application/json"
-        }
+            roster_data = None
+            def handle_response(response):
+                global roster_data
+                if "/crew/roster/v1" in response.url and response.status == 200:
+                    try:
+                        roster_data = response.json()
+                        print("🎯 Intercepted roster JSON data payload.")
+                    except Exception:
+                        pass
 
-        print("Connecting to RAM CrewAccess Portal...")
-        response = requests.get(url, headers=headers)
+            page.on("response", handle_response)
 
-        if response.status_code == 200:
-            data = response.json()
-            # Format nicely and save directly over the target roster file
-            with open("roster.json", "w") as f:
-                json.dump(data, f, indent=2)
-            print("Successfully pulled and saved new roster.json data file.")
-        else:
-            print(f"Failed to fetch data. Server responded with: {response.status_code}")
-            exit(1)
+            print("Navigating to RAM CrewAccess...")
+            page.goto("https://crewaccess.ram.jepphost.com/access/crewweb/")
+
+            page.wait_for_selector("input[type='text'], input[name='username']")
+            page.fill("input[type='text'], input[name='username']", username)
+            page.fill("input[type='password']", password)
+            
+            print("Submitting login credentials...")
+            page.click("button[type='submit'], input[type='submit']")
+
+            # Wait for data request to finish
+            page.wait_for_timeout(10000) 
+
+            if roster_data:
+                with open("roster.json", "w") as f:
+                    json.dump(roster_data, f, indent=2)
+                print("Saved roster.json.")
+            else:
+                print("Failed to catch data payload.")
+                exit(1)
+                
+            browser.close()
         EOF
 
     - name: Commit and Update GitHub Pages
@@ -68,7 +86,7 @@ jobs:
         git config --global user.email "bot@github.actions"
         git add roster.json
         if git diff --staged --quiet; then
-          echo "No changes detected in your roster schedule. Skipping commit."
+          echo "No changes detected. Skipping commit."
         else
           git commit -m "🔄 Automated Schedule Update [Skip CI]"
           git push
