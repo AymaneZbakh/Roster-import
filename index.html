@@ -100,7 +100,7 @@
 
     .pin-input-wrapper {
       position: relative;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
     }
 
     .pin-input-wrapper input {
@@ -111,7 +111,7 @@
       padding: 12px;
       color: white;
       font-family: var(--mono);
-      font-size: 16px;
+      font-size: 18px;
       letter-spacing: 6px;
       text-align: center;
       outline: none;
@@ -126,9 +126,47 @@
       color: #e24b4a;
       font-size: 11px;
       font-family: var(--mono);
-      margin-top: -8px;
-      margin-bottom: 12px;
+      margin-top: -12px;
+      margin-bottom: 16px;
       display: none;
+    }
+
+    /* Digital Keypad Styles */
+    .numpad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+
+    .numpad-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 500;
+      padding: 14px 0;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.1s ease;
+    }
+
+    .numpad-btn:active {
+      background: var(--bg-hover);
+      border-color: var(--text-3);
+      transform: scale(0.96);
+    }
+
+    .numpad-btn.action-btn {
+      background: rgba(255, 255, 255, 0.03);
+      font-size: 14px;
+      color: var(--text-2);
+    }
+
+    .numpad-btn.action-btn:active {
+      background: rgba(255, 255, 255, 0.08);
     }
 
     .pin-btn {
@@ -137,7 +175,7 @@
       color: white;
       border: none;
       border-radius: var(--r);
-      padding: 11px;
+      padding: 13px;
       font-family: var(--sans);
       font-size: 13px;
       font-weight: 600;
@@ -520,9 +558,26 @@
     <h2>Protected Console</h2>
     <p>Authentication required to review flight rosters.</p>
     <div class="pin-input-wrapper">
-      <input type="password" id="pinInput" maxlength="6" placeholder="••••••" autocomplete="off" autofocus>
+      <input type="password" id="pinInput" maxlength="6" placeholder="••••••" autocomplete="off" readonly>
     </div>
+    
     <div id="errorMsg" class="error-msg">Invalid access credential code</div>
+
+    <div class="numpad-grid">
+      <button class="numpad-btn" onclick="pressKey('1')">1</button>
+      <button class="numpad-btn" onclick="pressKey('2')">2</button>
+      <button class="numpad-btn" onclick="pressKey('3')">3</button>
+      <button class="numpad-btn" onclick="pressKey('4')">4</button>
+      <button class="numpad-btn" onclick="pressKey('5')">5</button>
+      <button class="numpad-btn" onclick="pressKey('6')">6</button>
+      <button class="numpad-btn" onclick="pressKey('7')">7</button>
+      <button class="numpad-btn" onclick="pressKey('8')">8</button>
+      <button class="numpad-btn" onclick="pressKey('9')">9</button>
+      <button class="numpad-btn action-btn" onclick="pressClear()">Clear</button>
+      <button class="numpad-btn" onclick="pressKey('0')">0</button>
+      <button class="numpad-btn action-btn" onclick="pressDelete()"><i class="ti ti-backspace"></i></button>
+    </div>
+
     <button class="pin-btn" onclick="verifyPinCode()">Unlock Workspace</button>
   </div>
 </div>
@@ -585,10 +640,27 @@ let currentFilter = 'all';
 let currentMonthFilter = 'all';
 let rosterData = null;
 
+// Numpad Functions
+function pressKey(num) {
+  errorMsg.style.display = 'none';
+  if (pinInput.value.length < 6) {
+    pinInput.value += num;
+  }
+}
+
+function pressDelete() {
+  errorMsg.style.display = 'none';
+  pinInput.value = pinInput.value.slice(0, -1);
+}
+
+function pressClear() {
+  errorMsg.style.display = 'none';
+  pinInput.value = '';
+}
+
 function verifyPinCode() {
   const inputVal = pinInput.value;
   
-  // Directly checking the code in plain text
   if (inputVal === "080425") {
     errorMsg.style.display = 'none';
     pinOverlay.style.display = 'none';
@@ -597,15 +669,8 @@ function verifyPinCode() {
   } else {
     errorMsg.style.display = 'block';
     pinInput.value = '';
-    pinInput.focus();
   }
 }
-
-pinInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    verifyPinCode();
-  }
-});
 
 async function initializeRosterSync() {
   try {
