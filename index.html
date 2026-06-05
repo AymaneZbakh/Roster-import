@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAM Roster Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <style>
+    :root {
+      --ram-red: #c8102e;
+      --ram-red-dim: rgba(200,16,46,0.12);
+      --ram-red-glow: rgba(200,16,46,0.25);
+      --bg: #0d0f12;
+      --bg-card: #13161b;
+      --bg-hover: #181c22;
+      --bg-input: #1a1e25;
+      --border: rgba(255,255,255,0.07);
+      --border-active: rgba(255,255,255,0.14);
+      --text: #e8eaf0;
+      --text-2: #8b909d;
+      --text-3: #555b68;
+      --blue: #4a9eff;
+      --blue-dim: rgba(74,158,255,0.12);
+      --green: #5db87a;
+      --green-dim: rgba(93,184,122,0.12);
+      --amber: #e8a840;
+      --amber-dim: rgba(232,168,64,0.12);
+      --mono: 'DM Mono', monospace;
+      --sans: 'Syne', sans-serif;
+      --r: 8px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Subtle grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      width: 42px; height: 42px;
+      background: var(--ram-red);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+      box-shadow: 0 0 20px var(--ram-red-glow);
+    }
+
+    .header-text h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.2px;
+    }
+
+    .header-text p {
+      font-size: 12px;
+      color: var(--text-2);
+      font-family: var(--mono);
+      margin-top: 2px;
+    }
+
+    .btn {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: var(--r);
+      border: 1px solid var(--border-active);
+      background: var(--bg-card);
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all .15s;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn:hover { background: var(--bg-hover); color: var(--text); border-color: var(--ram-red); }
+    .btn i { font-size: 15px; }
+
+    /* ── STATS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px 16px;
+      transition: border-color .15s;
+    }
+    .stat:hover { border-color: var(--border-active); }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-family: var(--mono);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+      font-family: var(--mono);
+    }
+
+    /* ── FILTER BAR ── */
+    .filters {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 1.25rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filters-label {
+      font-size: 11px;
+      color: var(--text-3);
+      font-family: var(--mono);
+      margin-right: 2px;
+    }
+
+    .filter-btn {
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 13px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .filter-btn:hover:not(.active) { background: var(--bg-card); color: var(--text); border-color: var(--border-active); }
+    .filter-btn.active { background: var(--ram-red); color: white; border-color: transparent; }
+
+    /* ── UPLOAD ZONE ── */
+    .upload-zone {
+      border: 1.5px dashed var(--border-active);
+      border-radius: 12px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      margin-bottom: 1.5rem;
+      background: var(--bg-card);
+    }
+    .upload-zone:hover {
+      border-color: var(--ram-red);
+      background: rgba(200,16,46,0.04);
+    }
+    .upload-zone i {
+      font-size: 36px;
+      color: var(--text-3);
+      margin-bottom: 12px;
+      display: block;
+      transition: color .2s;
+    }
+    .upload-zone:hover i { color: var(--ram-red); }
+    .upload-zone p { font-size: 14px; color: var(--text-2); margin-bottom: 6px; font-weight: 500; }
+    .upload-zone span { font-size: 12px; color: var(--text-3); font-family: var(--mono); }
+
+    #fileInput { display: none; }
+
+    /* ── ACTIVITY CARDS ── */
+    .activity-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .activity-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color .15s;
+    }
+    .activity-card:hover { border-color: var(--border-active); }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 16px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .card-header:hover { background: rgba(255,255,255,0.02); }
+
+    .type-badge {
+      font-size: 9px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      flex-shrink: 0;
+      font-family: var(--mono);
+    }
+    .badge-flight   { background: var(--blue-dim); color: var(--blue); }
+    .badge-standby  { background: var(--amber-dim); color: var(--amber); }
+    .badge-training { background: var(--green-dim); color: var(--green); }
+    .badge-other    { background: rgba(255,255,255,0.06); color: var(--text-2); }
+
+    .card-date {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-2);
+      min-width: 60px;
+      flex-shrink: 0;
+      font-family: var(--mono);
+    }
+
+    .card-route {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-time {
+      font-size: 11px;
+      color: var(--text-3);
+      text-align: right;
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-family: var(--mono);
+    }
+
+    .card-chevron {
+      font-size: 16px;
+      color: var(--text-3);
+      transition: transform .2s;
+      flex-shrink: 0;
+    }
+    .card-chevron.open { transform: rotate(180deg); }
+
+    /* ── CARD BODY ── */
+    .card-body {
+      border-top: 1px solid var(--border);
+      padding: 16px;
+      display: none;
+    }
+    .card-body.open { display: block; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .detail-item label {
+      font-size: 10px;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      display: block;
+      margin-bottom: 4px;
+      font-family: var(--mono);
+    }
+    .detail-item span {
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 500;
+      font-family: var(--mono);
+    }
+
+    .section-label {
+      font-size: 10px;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-family: var(--mono);
+      margin: 14px 0 8px;
+    }
+
+    /* ── TIMELINE ── */
+    .timeline { display: flex; flex-direction: column; gap: 4px; }
+
+    .tl-row {
+      display: grid;
+      grid-template-columns: 88px 1fr auto;
+      align-items: start;
+      gap: 12px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border-radius: 6px;
+      border-left: 2px solid transparent;
+    }
+    .flight-row  { border-color: var(--ram-red); }
+    .layover-row { border-color: var(--blue); }
+    .gt-row      { border-color: var(--green); }
+
+    .tl-type { font-size: 10px; color: var(--text-3); padding-top: 2px; font-family: var(--mono); }
+    .tl-label { font-size: 13px; font-weight: 600; color: var(--text); }
+    .tl-sublabel { font-size: 11px; color: var(--text-2); margin-top: 3px; font-family: var(--mono); }
+    .tl-time { font-size: 11px; color: var(--text-3); text-align: right; white-space: nowrap; padding-top: 2px; font-family: var(--mono); }
+
+    .fn-tag { font-size: 11px; font-weight: 600; color: var(--ram-red); font-family: var(--mono); }
+    .sched-line { font-size: 11px; color: var(--text-3); margin-top: 3px; font-family: var(--mono); }
+
+    .delay-tag {
+      font-size: 9px;
+      background: var(--green-dim);
+      color: var(--green);
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 5px;
+      font-family: var(--mono);
+      font-weight: 500;
+    }
+    .delay-tag.late { background: rgba(226,75,74,0.15); color: #e24b4a; }
+
+    /* ── CREW ── */
+    .crew-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+    .crew-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 10px 4px 5px;
+      transition: border-color .15s;
+    }
+    .crew-pill:hover { border-color: var(--border-active); }
+
+    .crew-avatar {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px;
+      font-weight: 600;
+      flex-shrink: 0;
+      font-family: var(--mono);
+    }
+    .av-cdb   { background: rgba(74,158,255,0.2);  color: var(--blue); }
+    .av-opl   { background: rgba(93,184,122,0.2);  color: var(--green); }
+    .av-ca    { background: rgba(244,192,209,0.2); color: #f4a0be; }
+    .av-cc    { background: rgba(232,168,64,0.2);  color: var(--amber); }
+    .av-ep    { background: rgba(93,184,122,0.15); color: #7dca96; }
+    .av-ef    { background: rgba(255,255,255,0.08); color: var(--text-2); }
+    .av-other { background: rgba(255,255,255,0.08); color: var(--text-2); }
+
+    .crew-name { font-size: 12px; color: var(--text); line-height: 1.3; }
+    .crew-meta { font-size: 10px; color: var(--text-3); font-family: var(--mono); }
+
+    .trn-badge {
+      font-size: 9px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-left: 4px;
+      font-family: var(--mono);
+      font-weight: 600;
+    }
+    .trn-I { background: var(--blue-dim); color: var(--blue); }
+    .trn-T { background: var(--green-dim); color: var(--green); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 3.5rem 1rem;
+      color: var(--text-3);
+    }
+    .empty-state i { font-size: 42px; display: block; margin-bottom: 12px; }
+    .empty-state p { font-size: 13px; font-family: var(--mono); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      .app { padding: 1.25rem 1rem 3rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .detail-grid { grid-template-columns: repeat(2, 1fr); }
+      .tl-row { grid-template-columns: 72px 1fr auto; gap: 8px; }
+      .header-text h1 { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="logo">RAM</div>
+    <div class="header-text">
+      <h1>Roster Viewer</h1>
+      <p id="crewLabel">Upload your roster JSON to get started</p>
+    </div>
+    <button class="btn" onclick="document.getElementById('fileInput').click()">
+      <i class="ti ti-upload"></i> Load roster
+    </button>
+    <button class="btn" id="icalBtn" style="display:none" onclick="exportIcal()">
+      <i class="ti ti-calendar-down"></i> Export .ics
+    </button>
+    <input type="file" id="fileInput" accept=".json">
+  </div>
+
+  <div id="statsGrid" class="stats-grid" style="display:none;">
+    <div class="stat"><div class="stat-label">Flights</div><div class="stat-value" id="statFlights">0</div></div>
+    <div class="stat"><div class="stat-label">Duties</div><div class="stat-value" id="statDuties">0</div></div>
+    <div class="stat"><div class="stat-label">Standby</div><div class="stat-value" id="statStandby">0</div></div>
+    <div class="stat"><div class="stat-label">Training</div><div class="stat-value" id="statTraining">0</div></div>
+  </div>
+
+  <div id="filterBar" class="filters" style="display:none;">
+    <span class="filters-label">Show:</span>
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="flight">Flights</button>
+    <button class="filter-btn" data-filter="standby">Standby</button>
+    <button class="filter-btn" data-filter="training">Training</button>
+    <button class="filter-btn" data-filter="other">Other</button>
+  </div>
+
+  <div id="uploadZone" class="upload-zone" onclick="document.getElementById('fileInput').click()">
+    <i class="ti ti-file-import"></i>
+    <p>Drop your roster JSON here or click to browse</p>
+    <span>Supports Royal Air Maroc crew roster format</span>
+  </div>
+
+  <div id="activityList" class="activity-list"></div>
+</div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+const activityList = document.getElementById('activityList');
+let allCards = [];
+let currentFilter = 'all';
+let rosterData = null;
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => { try { renderRoster(JSON.parse(ev.target.result)); } catch { alert('Could not parse JSON.'); } };
+  r.readAsText(file);
+});
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = '#c8102e'; });
+uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.style.borderColor = '';
+  const file = e.dataTransfer.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => { try { renderRoster(JSON.parse(ev.target.result)); } catch { alert('Could not parse JSON.'); } };
+  r.readAsText(file);
+});
+
+// Pure UTC — no offsets applied
+function fmtTime(iso) {
+  if (!iso) return '--';
+  const d = new Date(iso);
+  return d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
+}
+function fmtDateTime(iso) {
+  if (!iso) return '--';
+  const d = new Date(iso);
+  const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return d.getUTCDate().toString().padStart(2,'0') + ' ' + M[d.getUTCMonth()] + ' ' + d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
+}
+function fmtDate(iso) {
+  if (!iso) return '--';
+  const d = new Date(iso);
+  const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return d.getUTCDate().toString().padStart(2,'0') + ' ' + M[d.getUTCMonth()];
+}
+function fmtDuration(mins) {
+  if (!mins && mins !== 0) return '--';
+  return Math.floor(mins/60) + ':' + (mins%60).toString().padStart(2,'0') + 'h';
+}
+function avClass(pos) {
+  const p = (pos||'').toUpperCase();
+  if (p === 'CDB') return 'av-cdb';
+  if (p === 'OPL') return 'av-opl';
+  if (p.startsWith('CA')) return 'av-ca';
+  if (p === 'CC') return 'av-cc';
+  if (p === 'EP') return 'av-ep';
+  if (p === 'EF') return 'av-ef';
+  return 'av-other';
+}
+function ini(g, s) { return (((g||'')[0]||'') + ((s||'')[0]||'')).toUpperCase(); }
+
+function classifyActivity(act) {
+  const subs = act.activities || [];
+  if (subs.some(s => s.type === 'flight-leg')) return 'flight';
+  if (subs.some(s => s.isStandby)) return 'standby';
+  if (subs.some(s => s.isTraining || s.activityCode?.group === 'SIM' || s.activityCode?.group === 'GTR')) return 'training';
+  return 'other';
+}
+
+function buildCrewHTML(crew, trainingTags) {
+  if (!crew || !crew.length) return '';
+  const trnMap = {};
+  (trainingTags||[]).forEach(t => (t.crewIds||[]).forEach(id => { trnMap[id] = t.id; }));
+  let html = '<div class="crew-grid">';
+  crew.forEach(c => {
+    const trn = trnMap[c.crewId];
+    const badge = trn ? `<span class="trn-badge trn-${trn}">${trn}</span>` : '';
+    const sen = c.seniority ? ` · ${c.seniority}` : '';
+    html += `<div class="crew-pill">
+      <div class="crew-avatar ${avClass(c.position)}">${ini(c.givenNames, c.surname)}</div>
+      <div>
+        <div class="crew-name">${c.givenNames} ${c.surname}${badge}</div>
+        <div class="crew-meta">${c.position} · ${c.crewId}${sen}</div>
+      </div>
+    </div>`;
+  });
+  return html + '</div>';
+}
+
+function renderRoster(data) {
+  rosterData = data;
+  document.getElementById('icalBtn').style.display = '';
+  const entity = data.entity || data;
+  const activities = entity.activities || [];
+  const crewId = entity.crewId || '';
+
+  document.getElementById('crewLabel').textContent = crewId
+    ? 'Crew ID: ' + crewId + ' · ' + activities.length + ' activities'
+    : activities.length + ' activities loaded';
+  uploadZone.style.display = 'none';
+  document.getElementById('statsGrid').style.display = 'grid';
+  document.getElementById('filterBar').style.display = 'flex';
+
+  let fc = 0, dc = 0, sc = 0, tc = 0;
+  allCards = [];
+
+  activities.forEach(act => {
+    const type = classifyActivity(act);
+    if (type === 'flight') fc++;
+    else if (type === 'standby') sc++;
+    else if (type === 'training') tc++;
+    else dc++;
+
+    const subs = act.activities || [];
+    const flightLegs = subs.filter(s => s.type === 'flight-leg');
+    const role = act.key?.role || '';
+    const keyName = act.key?.name || '';
+
+    // Route in header
+    let routeText = act.startStation + ' → ' + act.endStation;
+    if (flightLegs.length > 1) {
+      const stops = [...new Set(flightLegs.map(l => l.startStation))];
+      stops.push(flightLegs[flightLegs.length-1].endStation);
+      routeText = stops.join(' → ');
+    }
+
+    // Timeline — skip briefing and debriefing
+    const SKIP = new Set(['briefing', 'debriefing']);
+    let timelineHTML = '<div class="section-label">Timeline</div><div class="timeline">';
+
+    subs.filter(s => !SKIP.has(s.type)).forEach(s => {
+      const st = fmtDateTime(s.startTime);
+      const et = fmtDateTime(s.endTime);
+      const dur = fmtDuration(s.durationMinutes);
+
+      if (s.type === 'flight-leg') {
+        const fn = (s.carrier||'') + (s.flightNumber||s.activityCode?.id||'');
+        const schSt = s.scheduledStartTime ? fmtTime(s.scheduledStartTime) : null;
+        const schEt = s.scheduledEndTime ? fmtTime(s.scheduledEndTime) : null;
+        const actSt = fmtTime(s.startTime);
+        const actEt = fmtTime(s.endTime);
+        const status = s.statusLabel || '';
+        const isLate = status.includes('+');
+        const delayBadge = status ? `<span class="delay-tag ${isLate ? 'late' : ''}">${status}</span>` : '';
+        const schedLine = schSt ? `<div class="sched-line">Sched: ${schSt} – ${schEt}</div>` : '';
+        const trnTags = (s.trainingTags||[]).map(t => t.descr).join(', ');
+        timelineHTML += `<div class="tl-row flight-row">
+          <div class="tl-type"><span class="fn-tag">${fn}</span>${delayBadge}<br><span style="font-size:10px;color:var(--text-3)">${fmtDate(s.startTime)}</span></div>
+          <div>
+            <div class="tl-label">${s.startStation} → ${s.endStation}</div>
+            <div class="tl-sublabel">${s.role?.id||role} · ${s.aircraftType||''} ${s.tail ? '· '+s.tail : ''} · Block ${fmtDuration(s.blockTimeMinutes||s.durationMinutes)}</div>
+            ${schedLine}
+            ${trnTags ? '<div class="sched-line">Training: '+trnTags+'</div>' : ''}
+            ${buildCrewHTML(s.assignedCrew, s.trainingTags)}
+          </div>
+          <div class="tl-time">${actSt}<br>${actEt}</div>
+        </div>`;
+
+      } else if (s.type === 'layover') {
+        timelineHTML += `<div class="tl-row layover-row">
+          <div class="tl-type" style="color:var(--blue)">Layover</div>
+          <div>
+            <div class="tl-label">${s.startStation} · ${dur}</div>
+          </div>
+          <div class="tl-time">${st}<br>${et}</div>
+        </div>`;
+
+      } else if (s.type === 'ground-task' || s.type === 'ground-transport') {
+        const code = s.activityCode?.id || s.type;
+        const desc = s.activityCode?.description || '';
+        timelineHTML += `<div class="tl-row gt-row">
+          <div class="tl-type" style="color:var(--green)">${code}</div>
+          <div>
+            <div class="tl-label">${s.startStation}${s.endStation !== s.startStation ? ' → '+s.endStation : ''}</div>
+            ${desc ? '<div class="tl-sublabel">'+desc+' · '+dur+'</div>' : ''}
+            ${buildCrewHTML(s.assignedCrew, s.trainingTags)}
+          </div>
+          <div class="tl-time">${st}<br>${et}</div>
+        </div>`;
+      }
+    });
+    timelineHTML += '</div>';
+
+    // Training tags
+    const trnTags = [...new Set(subs.flatMap(s => (s.trainingTags||[]).map(t => t.descr)))].filter(Boolean);
+
+    const card = document.createElement('div');
+    card.className = 'activity-card';
+    card.dataset.type = type;
+    const badgeClass = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' }[type];
+    const badgeLabel = { flight:'Flight', standby:'Standby', training:'Training', other:'Duty' }[type];
+
+    card.innerHTML = `
+      <div class="card-header" onclick="toggleCard(this)">
+        <span class="type-badge ${badgeClass}">${badgeLabel}</span>
+        <span class="card-date">${fmtDate(act.startTime)}</span>
+        <span class="card-route">${routeText}<span style="font-size:11px;font-weight:400;color:var(--text-3)"> · ${role}</span></span>
+        <span class="card-time">${fmtTime(act.startTime)} – ${fmtTime(act.endTime)}</span>
+        <i class="ti ti-chevron-down card-chevron"></i>
+      </div>
+      <div class="card-body">
+        <div class="detail-grid">
+          <div class="detail-item"><label>Trip / code</label><span>${keyName}</span></div>
+          <div class="detail-item"><label>Duration</label><span>${fmtDuration(act.durationMinutes)}</span></div>
+          <div class="detail-item"><label>Start</label><span>${fmtDateTime(act.startTime)}</span></div>
+          <div class="detail-item"><label>End</label><span>${fmtDateTime(act.endTime)}</span></div>
+        </div>
+        ${trnTags.length ? '<div class="section-label">Training tags</div><div style="font-size:12px;color:var(--text-2);margin-bottom:10px;font-family:var(--mono)">'+trnTags.join(' · ')+'</div>' : ''}
+        ${timelineHTML}
+      </div>`;
+
+    allCards.push(card);
+  });
+
+  document.getElementById('statFlights').textContent = fc;
+  document.getElementById('statDuties').textContent = dc;
+  document.getElementById('statStandby').textContent = sc;
+  document.getElementById('statTraining').textContent = tc;
+  renderFiltered();
+}
+
+function renderFiltered() {
+  activityList.innerHTML = '';
+  const visible = allCards.filter(c => currentFilter === 'all' || c.dataset.type === currentFilter);
+  if (!visible.length) {
+    activityList.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i><p>No activities match this filter</p></div>';
+  } else {
+    visible.forEach(c => activityList.appendChild(c));
+  }
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderFiltered();
+  });
+});
+
+function exportIcal() {
+  if (!rosterData) return;
+  const entity = rosterData.entity || rosterData;
+  const activities = entity.activities || [];
+  const crewId = entity.crewId || 'CREW';
+
+  function icsDate(iso) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    const pad = n => n.toString().padStart(2, '0');
+    return d.getUTCFullYear().toString()
+      + pad(d.getUTCMonth() + 1)
+      + pad(d.getUTCDate())
+      + 'T'
+      + pad(d.getUTCHours())
+      + pad(d.getUTCMinutes())
+      + '00Z';
+  }
+
+  function fold(line) {
+    // RFC 5545: lines > 75 octets must be folded
+    const out = [];
+    while (line.length > 75) {
+      out.push(line.slice(0, 75));
+      line = ' ' + line.slice(75);
+    }
+    out.push(line);
+    return out.join('\r\n');
+  }
+
+  function icsEscape(str) {
+    return (str || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+  }
+
+  const now = icsDate(new Date().toISOString());
+  let cal = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//RAM Roster Viewer//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    fold('X-WR-CALNAME:RAM Roster – ' + crewId),
+    'X-WR-TIMEZONE:UTC',
+  ];
+
+  activities.forEach((act, idx) => {
+    const type = classifyActivity(act);
+    const subs = act.activities || [];
+    const flightLegs = subs.filter(s => s.type === 'flight-leg');
+    const role = act.key?.role || '';
+    const keyName = act.key?.name || '';
+    const uid = 'ram-' + crewId + '-' + idx + '-' + (act.startTime || idx) + '@ram-roster';
+
+    const dtstart = icsDate(act.startTime);
+    const dtend   = icsDate(act.endTime);
+    if (!dtstart || !dtend) return;
+
+    // Summary line
+    const typeLabel = { flight:'✈', standby:'⏳', training:'📚', other:'🗓' }[type] || '';
+    let route = act.startStation + ' → ' + act.endStation;
+    if (flightLegs.length > 1) {
+      const stops = [...new Set(flightLegs.map(l => l.startStation))];
+      stops.push(flightLegs[flightLegs.length-1].endStation);
+      route = stops.join(' → ');
+    }
+    const summary = typeLabel + ' ' + route + (role ? ' (' + role + ')' : '');
+
+    // Location: departure airport
+    const location = act.startStation || '';
+
+    // Description: build a readable block
+    const descParts = [];
+    if (keyName) descParts.push('Trip: ' + keyName);
+    if (act.durationMinutes) descParts.push('Duration: ' + fmtDuration(act.durationMinutes));
+    flightLegs.forEach(l => {
+      const fn = (l.carrier || '') + (l.flightNumber || l.activityCode?.id || '');
+      const legLine = fn + '  ' + l.startStation + ' → ' + l.endStation
+        + '  ' + fmtTime(l.startTime) + '–' + fmtTime(l.endTime)
+        + (l.aircraftType ? '  ' + l.aircraftType : '')
+        + (l.statusLabel ? '  [' + l.statusLabel + ']' : '');
+      descParts.push(legLine);
+    });
+    const trnTags = [...new Set(subs.flatMap(s => (s.trainingTags || []).map(t => t.descr)))].filter(Boolean);
+    if (trnTags.length) descParts.push('Training: ' + trnTags.join(', '));
+    const description = descParts.join('\\n');
+
+    cal.push('BEGIN:VEVENT');
+    cal.push(fold('UID:' + icsEscape(uid)));
+    cal.push('DTSTAMP:' + now);
+    cal.push('DTSTART:' + dtstart);
+    cal.push('DTEND:' + dtend);
+    cal.push(fold('SUMMARY:' + icsEscape(summary)));
+    if (location) cal.push(fold('LOCATION:' + icsEscape(location)));
+    if (description) cal.push(fold('DESCRIPTION:' + description));
+    cal.push('END:VEVENT');
+  });
+
+  cal.push('END:VCALENDAR');
+
+  const blob = new Blob([cal.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'ram_roster_' + crewId + '.ics';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+}
+
+function toggleCard(h) {
+  h.nextElementSibling.classList.toggle('open');
+  h.querySelector('.card-chevron').classList.toggle('open');
+}
+</script>
+</body>
+</html>
