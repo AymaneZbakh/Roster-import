@@ -1256,25 +1256,24 @@ function _doExportIcal(activities, crewId, suffix = '') {
         + (l.aircraftType ? '  ' + l.aircraftType : '')
         + (l.statusLabel  ? '  [' + l.statusLabel + ']' : ''));
     });
-    // Collect unique CDB and OPL crew from all possible locations in the activity tree
-    const crewMap = new Map();
-    const collectCrew = (source) => {
-      (source.assignedCrew || []).forEach(c => {
-        const pos = (c.position?.id || c.position || '').toUpperCase();
-        if (pos === 'CDB' || pos === 'OPL') {
-          const key = c.crewId || (c.givenNames + c.surname);
-          if (!crewMap.has(key)) crewMap.set(key, { ...c, position: pos });
-        }
+    // Collect unique CDB and OPL crew only for flight and training activities
+    if (type === 'flight' || type === 'training') {
+      const crewMap = new Map();
+      const collectCrew = (source) => {
+        (source.assignedCrew || []).forEach(c => {
+          const pos = (c.position?.id || c.position || '').toUpperCase();
+          if (pos === 'CDB' || pos === 'OPL') {
+            const key = c.crewId || (c.givenNames + c.surname);
+            if (!crewMap.has(key)) crewMap.set(key, { ...c, position: pos });
+          }
+        });
+      };
+      collectCrew(act);
+      subs.forEach(s => {
+        collectCrew(s);
+        (s.activities || []).forEach(ss => collectCrew(ss));
       });
-    };
-    collectCrew(act);
-    subs.forEach(s => {
-      collectCrew(s);
-      (s.activities || []).forEach(ss => collectCrew(ss));
-    });
-    const crewList = [...crewMap.values()];
-    if (crewList.length) {
-      crewList.forEach(c => {
+      [...crewMap.values()].forEach(c => {
         descParts.push(c.position + ': ' + c.givenNames + ' ' + c.surname + ' (' + c.crewId + ')');
       });
     }
