@@ -790,8 +790,22 @@ function pressClear() {
   errorMsg.classList.add('hidden');
   pinInput.value = '';
 }
-function verifyPinCode() {
-  if (pinInput.value === "080425") {
+// SHA-256 hash of the PIN (never store the plain PIN in source)
+// Hash of "080425"
+const CORRECT_PIN_HASH = "599d1db9da4631903b0c74ea64d598dead94905690b47ef7b03ed2c6a470de3c";
+
+async function hashPin(pin) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function verifyPinCode() {
+  const entered = pinInput.value;
+  const enteredHash = await hashPin(entered);
+  if (enteredHash === CORRECT_PIN_HASH) {
     errorMsg.classList.add('hidden');
     pinOverlay.classList.add('hidden');
     appContainer.style.display = 'block';
