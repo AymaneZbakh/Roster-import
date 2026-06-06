@@ -1260,13 +1260,18 @@ function _doExportIcal(activities, crewId, suffix = '') {
     const crewMap = new Map();
     const collectCrew = (source) => {
       (source.assignedCrew || []).forEach(c => {
-        if ((c.position === 'CDB' || c.position === 'OPL') && !crewMap.has(c.crewId)) {
-          crewMap.set(c.crewId, c);
+        const pos = (c.position?.id || c.position || '').toUpperCase();
+        if (pos === 'CDB' || pos === 'OPL') {
+          const key = c.crewId || (c.givenNames + c.surname);
+          if (!crewMap.has(key)) crewMap.set(key, { ...c, position: pos });
         }
       });
     };
     collectCrew(act);
-    subs.forEach(s => collectCrew(s));
+    subs.forEach(s => {
+      collectCrew(s);
+      (s.activities || []).forEach(ss => collectCrew(ss));
+    });
     const crewList = [...crewMap.values()];
     if (crewList.length) {
       crewList.forEach(c => {
