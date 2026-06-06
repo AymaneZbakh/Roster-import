@@ -1765,20 +1765,30 @@ function renderDayPanel(dateKey, cards) {
     const card = document.createElement('div');
     card.className = 'day-card';
 
-    // Build legs HTML
+    // Build legs + layovers HTML (interleaved in sub-activity order)
+    const SKIP = new Set(['briefing', 'debriefing']);
     let legsHTML = '';
-    legs.forEach(l => {
-      const fn = (l.carrier||'') + (l.flightNumber || l.activityCode?.id || '');
-      const crew = crewList.map(cm => cm.position + ' ' + cm.surname).join(', ');
-      legsHTML += `<div style="padding:6px 13px 8px; border-top:1px solid var(--border);">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
-          <span style="font-size:11px;font-weight:700;color:var(--ram-red);font-family:var(--mono);">${fn}</span>
-          <span style="font-size:12px;font-weight:600;color:var(--text);">${l.startStation} → ${l.endStation}</span>
-          <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);margin-left:auto;">Block ${fmtDuration(l.blockTimeMinutes||l.durationMinutes)}</span>
-        </div>
-        <div style="font-size:11px;color:var(--text-3);font-family:var(--mono);">${l.aircraftType||''} · ${fmtTime(l.startTime)}–${fmtTime(l.endTime)}</div>
-        ${crew ? `<div style="font-size:11px;color:var(--text-2);margin-top:3px;"><i class="ti ti-users" style="font-size:10px;margin-right:3px;"></i>${crew}</div>` : ''}
-      </div>`;
+    subs.filter(s => !SKIP.has(s.type)).forEach(s => {
+      if (s.type === 'flight-leg') {
+        const fn   = (s.carrier||'') + (s.flightNumber || s.activityCode?.id || '');
+        const crew = crewList.map(cm => cm.position + ' ' + cm.surname).join(', ');
+        legsHTML += `<div style="padding:6px 13px 8px; border-top:1px solid var(--border); border-left:2px solid var(--ram-red); margin-left:0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+            <span style="font-size:11px;font-weight:700;color:var(--ram-red);font-family:var(--mono);">${fn}</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text);">${s.startStation} → ${s.endStation}</span>
+            <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);margin-left:auto;">Block ${fmtDuration(s.blockTimeMinutes||s.durationMinutes)}</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-3);font-family:var(--mono);">${s.aircraftType||''} · ${fmtTime(s.startTime)}–${fmtTime(s.endTime)}</div>
+          ${crew ? `<div style="font-size:11px;color:var(--text-2);margin-top:3px;"><i class="ti ti-users" style="font-size:10px;margin-right:3px;"></i>${crew}</div>` : ''}
+        </div>`;
+      } else if (s.type === 'layover') {
+        legsHTML += `<div style="padding:5px 13px; border-top:1px solid var(--border); border-left:2px solid var(--blue); display:flex; align-items:center; gap:8px;">
+          <i class="ti ti-moon" style="font-size:11px;color:var(--blue);"></i>
+          <span style="font-size:11px;font-weight:600;color:var(--blue);font-family:var(--mono);">Layover</span>
+          <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);">${s.startStation} · ${fmtDuration(s.durationMinutes)}</span>
+          <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);margin-left:auto;">${fmtTime(s.startTime)}–${fmtTime(s.endTime)}</span>
+        </div>`;
+      }
     });
 
     card.innerHTML = `
