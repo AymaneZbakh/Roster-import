@@ -1229,8 +1229,6 @@ function _doExportIcal(activities, crewId, suffix = '') {
         + (l.aircraftType ? '  ' + l.aircraftType : '')
         + (l.statusLabel  ? '  [' + l.statusLabel + ']' : ''));
     });
-    const trnTags = [...new Set(subs.flatMap(s => (s.trainingTags||[]).map(t => t.descr)))].filter(Boolean);
-
     // Collect unique CDB and OPL crew across all flight legs
     const crewMap = new Map();
     flightLegs.forEach(l => {
@@ -1242,9 +1240,9 @@ function _doExportIcal(activities, crewId, suffix = '') {
     });
     const crewList = [...crewMap.values()];
     if (crewList.length) {
-      descParts.push('Crew:\\n' + crewList.map(c =>
-        '  ' + c.position + ': ' + c.givenNames + ' ' + c.surname + ' (' + c.crewId + ')'
-      ).join('\\n'));
+      crewList.forEach(c => {
+        descParts.push(c.position + ': ' + c.givenNames + ' ' + c.surname + ' (' + c.crewId + ')');
+      });
     }
 
     cal.push('BEGIN:VEVENT');
@@ -1254,7 +1252,7 @@ function _doExportIcal(activities, crewId, suffix = '') {
     cal.push('DTEND:' + dtend);
     cal.push(fold('SUMMARY:' + icsEscape(summary)));
     if (location) cal.push(fold('LOCATION:' + icsEscape(location)));
-    if (descParts.length) cal.push(fold('DESCRIPTION:' + descParts.join('\\n')));
+    if (descParts.length) cal.push(fold('DESCRIPTION:' + icsEscape(descParts.join('\n'))));
     cal.push('END:VEVENT');
   });
   cal.push('END:VCALENDAR');
