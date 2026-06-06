@@ -710,6 +710,9 @@
     <button class="btn hidden" id="icalBtn" onclick="exportIcal()">
       <i class="ti ti-calendar-down"></i> Export Calendar (.ics)
     </button>
+    <button class="btn" id="refreshBtn" onclick="refreshRoster()">
+      <i class="ti ti-refresh"></i> Refresh
+    </button>
   </div>
 
   <div id="statsGrid" class="stats-grid hidden">
@@ -823,6 +826,30 @@ async function initializeRosterSync() {
     if (response.ok) { renderRoster(await response.json()); }
     else showErrorState();
   } catch { showErrorState(); }
+}
+async function refreshRoster() {
+  const btn = document.getElementById('refreshBtn');
+  const icon = btn.querySelector('i');
+  icon.classList.add('spin');
+  btn.disabled = true;
+  allCards = [];
+  selectedIds.clear();
+  rosterData = null;
+  cardIdCounter = 0;
+  currentFilter = 'all';
+  currentMonthFilter = 'all';
+  document.getElementById('statsGrid').classList.add('hidden');
+  document.getElementById('filterBar').classList.add('hidden');
+  document.getElementById('icalBtn').classList.add('hidden');
+  totalsBar.classList.add('hidden');
+  activityList.innerHTML = '<div class="empty-state"><i class="ti ti-loader spin"></i><p>Synchronizing Live Roster File</p><span>Pulling background data layers...</span></div>';
+  try {
+    const response = await fetch('roster.json?t=' + Date.now());
+    if (response.ok) { renderRoster(await response.json()); }
+    else showErrorState();
+  } catch { showErrorState(); }
+  icon.classList.remove('spin');
+  btn.disabled = false;
 }
 function showErrorState() {
   document.getElementById('crewLabel').textContent = "Sync pending";
@@ -1229,15 +1256,17 @@ function _doExportIcal(activities, crewId, suffix = '') {
         + (l.aircraftType ? '  ' + l.aircraftType : '')
         + (l.statusLabel  ? '  [' + l.statusLabel + ']' : ''));
     });
-    // Collect unique CDB and OPL crew across all flight legs
+    // Collect unique CDB and OPL crew from all possible locations in the activity tree
     const crewMap = new Map();
-    flightLegs.forEach(l => {
-      (l.assignedCrew || []).forEach(c => {
+    const collectCrew = (source) => {
+      (source.assignedCrew || []).forEach(c => {
         if ((c.position === 'CDB' || c.position === 'OPL') && !crewMap.has(c.crewId)) {
           crewMap.set(c.crewId, c);
         }
       });
-    });
+    };
+    collectCrew(act);
+    subs.forEach(s => collectCrew(s));
     const crewList = [...crewMap.values()];
     if (crewList.length) {
       crewList.forEach(c => {
