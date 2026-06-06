@@ -576,6 +576,72 @@
     .hidden { display: none !important; }
     .spin   { animation: spin 1s linear infinite; }
 
+    /* ── TOAST NOTIFICATION ──────────────────────────────────────────────── */
+    @keyframes toastIn  { from { opacity:0; transform:translateX(120%); } to { opacity:1; transform:translateX(0); } }
+    @keyframes toastOut { from { opacity:1; transform:translateX(0); }   to { opacity:0; transform:translateX(120%); } }
+    @keyframes toastProgress { from { width:100%; } to { width:0%; } }
+
+    #toastContainer {
+      position: fixed; top: 20px; right: 20px; z-index: 99999;
+      display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+    }
+    .toast {
+      position: relative; overflow: hidden;
+      display: flex; align-items: flex-start; gap: 12px;
+      background: #0e1f15;
+      border: 1px solid rgba(93,184,122,0.45);
+      border-left: 3px solid var(--green);
+      border-radius: 10px; padding: 13px 16px 13px 14px;
+      min-width: 280px; max-width: 360px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(93,184,122,0.08);
+      animation: toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+      pointer-events: all;
+    }
+    .toast.leaving { animation: toastOut 0.3s ease-in forwards; }
+    .toast-icon {
+      width:28px; height:28px; border-radius:50%;
+      background: var(--green-dim); border:1px solid rgba(93,184,122,0.3);
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; margin-top:1px;
+    }
+    .toast-icon i { font-size:14px; color:var(--green); }
+    .toast-content { flex:1; min-width:0; }
+    .toast-title {
+      font-size:11px; font-weight:700; color:var(--green);
+      letter-spacing:0.5px; text-transform:uppercase;
+      font-family:var(--mono); margin-bottom:3px;
+    }
+    .toast-body { font-size:13px; font-weight:600; color:var(--text); }
+    .toast-sub  { font-size:11px; color:var(--text-2); font-family:var(--mono); margin-top:2px; }
+    .toast-progress {
+      position:absolute; bottom:0; left:0; height:2px;
+      background:var(--green); border-radius:0 0 0 10px;
+      animation: toastProgress 4s linear forwards;
+    }
+
+    /* ── URGENT FLIGHT (< 24 h) ──────────────────────────────────────────── */
+    @keyframes urgentPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(232,168,64,0); }
+      50%      { box-shadow: 0 0 0 4px rgba(232,168,64,0.12); }
+    }
+    .activity-card.urgent-flight {
+      border-color: var(--amber);
+      background: rgba(232,168,64,0.04);
+      animation: urgentPulse 3s ease-in-out infinite;
+    }
+    .activity-card.urgent-flight:hover {
+      border-color: var(--amber);
+      background: rgba(232,168,64,0.08);
+    }
+    .urgent-countdown {
+      display:inline-flex; align-items:center; gap:5px;
+      background: var(--amber-dim); border:1px solid rgba(232,168,64,0.3);
+      border-radius:5px; padding:2px 8px;
+      font-size:10px; font-family:var(--mono); font-weight:600; color:var(--amber);
+      white-space:nowrap; flex-shrink:0; letter-spacing:0.3px;
+    }
+    .urgent-countdown i { font-size:10px; }
+
     /* Card selection */
     .activity-card.selected {
       border-color: var(--ram-red);
@@ -876,6 +942,8 @@
 </head>
 <body>
 
+<div id="toastContainer"></div>
+
 <div id="pinOverlay" class="pin-overlay">
   <div class="pin-box">
     <div class="logo-container">
@@ -1006,6 +1074,7 @@ const errorMsg       = document.getElementById('errorMsg');
 const selectionBar   = document.getElementById('selectionBar');
 const selCountEl     = document.getElementById('selCount');
 const totalsBar      = document.getElementById('totalsBar');
+const toastContainer = document.getElementById('toastContainer');
 
 let allCards       = [];   // { el, act, type, month, durationMinutes, blockMinutes }
 let selectedIds    = new Set();
@@ -1013,6 +1082,39 @@ let currentFilter  = 'all';
 let currentMonthFilter = 'all';
 let rosterData     = null;
 let cardIdCounter  = 0;
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+function showFlightAddedToast(route, dateStr, timeStr) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `
+    <div class="toast-icon"><i class="ti ti-plane"></i></div>
+    <div class="toast-content">
+      <div class="toast-title"><i class="ti ti-circle-check" style="margin-right:4px;"></i>Flight Added</div>
+      <div class="toast-body">${route}</div>
+      <div class="toast-sub">${dateStr} · ${timeStr}</div>
+    </div>
+    <div class="toast-progress"></div>`;
+  toastContainer.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('leaving');
+    setTimeout(() => toast.remove(), 320);
+  }, 4000);
+}
+
+// ── URGENCY HELPERS ────────────────────────────────────────────────────────
+function isWithin24Hours(isoTime) {
+  if (!isoTime) return false;
+  const diff = new Date(isoTime).getTime() - Date.now();
+  return diff > 0 && diff < 86400000;
+}
+function hoursUntil(isoTime) {
+  const diff = new Date(isoTime).getTime() - Date.now();
+  if (diff <= 0) return null;
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  return h === 0 ? m + 'm' : h + 'h ' + m + 'm';
+}
 
 // ── PIN ────────────────────────────────────────────────────────────────────
 function pressKey(num) {
@@ -1193,12 +1295,38 @@ function buildCrewHTML(crew, trainingTags) {
 }
 
 // ── RENDER ROSTER ──────────────────────────────────────────────────────────
+let _knownFlightKeys = null; // null on first load; populated after
+
 function renderRoster(data) {
   rosterData = data;
   document.getElementById('icalBtn').classList.remove('hidden');
   const entity     = data.entity || data;
   const activities = entity.activities || [];
   const crewId     = entity.crewId || '';
+
+  // Detect newly added flights vs previous load
+  const isFirstLoad = (_knownFlightKeys === null);
+  const newFlights  = [];
+  const currentKeys = new Set();
+  activities.forEach(act => {
+    if ((act.activities || []).some(s => s.type === 'flight-leg')) {
+      const key = act.startTime + '|' + act.startStation + '|' + act.endStation;
+      currentKeys.add(key);
+      if (!isFirstLoad && !_knownFlightKeys.has(key)) newFlights.push(act);
+    }
+  });
+  _knownFlightKeys = currentKeys;
+
+  // Show staggered toasts for each new flight
+  newFlights.forEach((act, i) => {
+    setTimeout(() => {
+      const legs  = (act.activities || []).filter(s => s.type === 'flight-leg');
+      const route = legs.length > 1
+        ? [...new Set(legs.map(l => l.startStation))].concat(legs[legs.length-1].endStation).join(' → ')
+        : (act.startStation || '?') + ' → ' + (act.endStation || '?');
+      showFlightAddedToast(route, fmtDate(act.startTime), fmtTime(act.startTime) + ' – ' + fmtTime(act.endTime));
+    }, i * 550);
+  });
 
   document.getElementById('crewLabel').textContent = crewId
     ? 'Crew ID: ' + crewId + ' · ' + activities.length + ' activities'
@@ -1289,12 +1417,18 @@ function renderRoster(data) {
     const badgeClass = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' }[type];
     const badgeLabel = { flight:'Flight', standby:'Reserve', training:'Training', other:'Duty' }[type];
 
-    const cardId = ++cardIdCounter;
-    const card   = document.createElement('div');
-    card.className    = 'activity-card';
+    const cardId  = ++cardIdCounter;
+    const card    = document.createElement('div');
+    const urgent  = (type === 'flight') && isWithin24Hours(act.startTime);
+    const timeLeft = urgent ? hoursUntil(act.startTime) : null;
+    card.className    = 'activity-card' + (urgent ? ' urgent-flight' : '');
     card.dataset.type = type;
     card.dataset.month= monthKey;
     card.dataset.id   = cardId;
+
+    const urgentBadge = urgent && timeLeft
+      ? `<span class="urgent-countdown"><i class="ti ti-clock-exclamation"></i>${timeLeft}</span>`
+      : '';
 
     card.innerHTML = `
       <div class="card-header" onclick="toggleCard(this.nextElementSibling, this.querySelector('.card-chevron'))">
@@ -1304,6 +1438,7 @@ function renderRoster(data) {
         <span class="type-badge ${badgeClass}">${badgeLabel}</span>
         <span class="card-date">${fmtDate(act.startTime)}</span>
         <span class="card-route">${routeText}<span class="card-role"> · ${role}</span></span>
+        ${urgentBadge}
         <span class="card-time">${fmtTime(act.startTime)} – ${fmtTime(act.endTime)}</span>
         <i class="ti ti-chevron-down card-chevron"></i>
       </div>
