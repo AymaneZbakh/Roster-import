@@ -872,9 +872,165 @@
       .cal-pill { font-size: 9px; padding: 1px 4px; }
       .cal-month-label { font-size: 16px; }
     }
+
+    /* ── TOAST NOTIFICATION ─────────────────────────────────────────────── */
+    #toastContainer {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: #0f2018;
+      border: 1px solid rgba(93,184,122,0.4);
+      border-left: 3px solid var(--green);
+      border-radius: 10px;
+      padding: 13px 16px;
+      min-width: 280px;
+      max-width: 360px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(93,184,122,0.1);
+      pointer-events: all;
+      animation: toastIn .3s cubic-bezier(.2,.8,.4,1) forwards;
+      position: relative;
+      overflow: hidden;
+    }
+    .toast::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at top left, rgba(93,184,122,0.07), transparent 60%);
+      pointer-events: none;
+    }
+    .toast.hide {
+      animation: toastOut .3s ease forwards;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(30px) scale(0.95); }
+      to   { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateX(0) scale(1); }
+      to   { opacity: 0; transform: translateX(30px) scale(0.95); }
+    }
+    .toast-icon {
+      width: 32px; height: 32px;
+      background: var(--green-dim);
+      border: 1px solid rgba(93,184,122,0.3);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 16px;
+      color: var(--green);
+    }
+    .toast-body { flex: 1; min-width: 0; }
+    .toast-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: 0.3px;
+      margin-bottom: 3px;
+      font-family: var(--sans);
+    }
+    .toast-msg {
+      font-size: 12px;
+      color: var(--text-2);
+      font-family: var(--mono);
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .toast-time {
+      font-size: 10px;
+      color: var(--text-3);
+      font-family: var(--mono);
+      margin-top: 4px;
+    }
+    .toast-close {
+      background: none;
+      border: none;
+      color: var(--text-3);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0;
+      flex-shrink: 0;
+      line-height: 1;
+      transition: color .15s;
+    }
+    .toast-close:hover { color: var(--text); }
+    .toast-progress {
+      position: absolute;
+      bottom: 0; left: 0;
+      height: 2px;
+      background: var(--green);
+      opacity: 0.5;
+      animation: toastProgress 4s linear forwards;
+    }
+    @keyframes toastProgress {
+      from { width: 100%; }
+      to   { width: 0%; }
+    }
+
+    /* ── URGENT FLIGHT CARD (<24h) ──────────────────────────────────────── */
+    .activity-card.urgent-flight {
+      border-color: rgba(232,168,64,0.45);
+      background: linear-gradient(135deg, #13161b 0%, #1a1608 100%);
+      box-shadow: 0 0 0 1px rgba(232,168,64,0.15), 0 4px 16px rgba(232,168,64,0.08);
+      position: relative;
+    }
+    .activity-card.urgent-flight::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--amber), rgba(232,168,64,0.2));
+      border-radius: 10px 10px 0 0;
+    }
+    .activity-card.urgent-flight .card-header:hover {
+      background: rgba(232,168,64,0.04);
+    }
+    .urgent-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-family: var(--mono);
+      background: var(--amber-dim);
+      color: var(--amber);
+      border: 1px solid rgba(232,168,64,0.25);
+      flex-shrink: 0;
+      animation: urgentPulse 2s ease-in-out infinite;
+    }
+    .urgent-badge i { font-size: 9px; }
+    @keyframes urgentPulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(232,168,64,0.3); }
+      50%       { opacity: 0.85; box-shadow: 0 0 0 4px rgba(232,168,64,0); }
+    }
+    .urgent-countdown {
+      font-size: 10px;
+      color: var(--amber);
+      font-family: var(--mono);
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
+
+<div id="toastContainer"></div>
 
 <div id="pinOverlay" class="pin-overlay">
   <div class="pin-box">
@@ -1013,6 +1169,34 @@ let currentFilter  = 'all';
 let currentMonthFilter = 'all';
 let rosterData     = null;
 let cardIdCounter  = 0;
+let knownFlightKeys = new Set(); // track previously seen flights for new-flight detection
+let urgentTimers   = [];         // interval IDs for countdown ticking
+
+// ── TOAST NOTIFICATION ────────────────────────────────────────────────────
+function showToast(title, message, subtext) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `
+    <div class="toast-icon"><i class="ti ti-plane"></i></div>
+    <div class="toast-body">
+      <div class="toast-title">${title}</div>
+      <div class="toast-msg">${message}</div>
+      ${subtext ? `<div class="toast-time">${subtext}</div>` : ''}
+    </div>
+    <button class="toast-close" onclick="dismissToast(this.closest('.toast'))"><i class="ti ti-x"></i></button>
+    <div class="toast-progress"></div>`;
+  container.appendChild(toast);
+  const timer = setTimeout(() => dismissToast(toast), 4500);
+  toast._timer = timer;
+}
+
+function dismissToast(toast) {
+  if (!toast || !toast.isConnected) return;
+  clearTimeout(toast._timer);
+  toast.classList.add('hide');
+  toast.addEventListener('animationend', () => toast.remove(), { once: true });
+}
 
 // ── PIN ────────────────────────────────────────────────────────────────────
 function pressKey(num) {
@@ -1057,7 +1241,17 @@ async function verifyPinCode() {
 async function initializeRosterSync() {
   try {
     const response = await fetch('roster.json');
-    if (response.ok) { renderRoster(await response.json()); }
+    if (response.ok) {
+      const data = await response.json();
+      // Seed known flights silently on first load (no toasts)
+      const entity = data.entity || data;
+      (entity.activities || []).forEach(act => {
+        if (classifyActivity(act) === 'flight') {
+          knownFlightKeys.add(act.startTime + '|' + (act.startStation||'') + '|' + (act.endStation||''));
+        }
+      });
+      renderRoster(data);
+    }
     else showErrorState();
   } catch { showErrorState(); }
 }
@@ -1070,6 +1264,8 @@ async function refreshRoster() {
   selectedIds.clear();
   rosterData = null;
   cardIdCounter = 0;
+  urgentTimers.forEach(clearInterval);
+  urgentTimers = [];
   currentFilter = 'all';
   currentMonthFilter = 'all';
   document.getElementById('statsGrid').classList.add('hidden');
@@ -1296,12 +1492,38 @@ function renderRoster(data) {
     card.dataset.month= monthKey;
     card.dataset.id   = cardId;
 
+    // ── Urgent: departs within 24 hours ──────────────────────────────────
+    const now = Date.now();
+    const depMs = new Date(act.startTime).getTime();
+    const msUntil = depMs - now;
+    const isUrgent = type === 'flight' && msUntil > 0 && msUntil < 86400000;
+
+    // unique key for new-flight detection
+    const flightKey = act.startTime + '|' + (act.startStation||'') + '|' + (act.endStation||'');
+    const isNew = type === 'flight' && !knownFlightKeys.has(flightKey) && knownFlightKeys.size > 0;
+    if (type === 'flight') knownFlightKeys.add(flightKey);
+
+    if (isUrgent) card.classList.add('urgent-flight');
+
+    function fmtCountdown(ms) {
+      const totalSec = Math.max(0, Math.floor(ms / 1000));
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      return h + 'h ' + m.toString().padStart(2,'0') + 'm';
+    }
+
+    const urgentBadgeHTML = isUrgent
+      ? `<span class="urgent-badge"><i class="ti ti-clock-exclamation"></i> &lt;24H</span>
+         <span class="urgent-countdown" id="countdown-${cardId}">${fmtCountdown(msUntil)}</span>`
+      : '';
+
     card.innerHTML = `
       <div class="card-header" onclick="toggleCard(this.nextElementSibling, this.querySelector('.card-chevron'))">
         <div class="card-select-cb" onclick="toggleSelect(event, ${cardId})">
           <i class="ti ti-check"></i>
         </div>
         <span class="type-badge ${badgeClass}">${badgeLabel}</span>
+        ${urgentBadgeHTML}
         <span class="card-date">${fmtDate(act.startTime)}</span>
         <span class="card-route">${routeText}<span class="card-role"> · ${role}</span></span>
         <span class="card-time">${fmtTime(act.startTime)} – ${fmtTime(act.endTime)}</span>
@@ -1315,6 +1537,30 @@ function renderRoster(data) {
         </div>
         ${timelineHTML}
       </div>`;
+
+    // Live countdown ticker for urgent flights
+    if (isUrgent) {
+      const tid = setInterval(() => {
+        const el = document.getElementById('countdown-' + cardId);
+        if (!el) { clearInterval(tid); return; }
+        const remaining = new Date(act.startTime).getTime() - Date.now();
+        if (remaining <= 0) { el.textContent = 'Departing now'; clearInterval(tid); return; }
+        el.textContent = fmtCountdown(remaining);
+      }, 30000);
+      urgentTimers.push(tid);
+    }
+
+    // Show toast for newly added flights
+    if (isNew) {
+      const depIn = msUntil > 0 && msUntil < 86400000
+        ? 'Departs in ' + fmtCountdown(msUntil)
+        : 'Departs ' + fmtDate(act.startTime) + ' at ' + fmtTime(act.startTime);
+      showToast(
+        'New Flight Added',
+        routeText + (role ? '  ·  ' + role : ''),
+        depIn
+      );
+    }
 
     allCards.push({ el: card, act, type, month: monthKey, durationMinutes: act.durationMinutes || 0, blockMinutes: blockMins });
   });
