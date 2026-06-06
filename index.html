@@ -1233,6 +1233,22 @@ function _doExportIcal(activities, crewId, suffix = '') {
     const trnTags = [...new Set(subs.flatMap(s => (s.trainingTags||[]).map(t => t.descr)))].filter(Boolean);
     if (trnTags.length) descParts.push('Training: ' + trnTags.join(', '));
 
+    // Collect unique CDB and OPL crew across all flight legs
+    const crewMap = new Map();
+    flightLegs.forEach(l => {
+      (l.assignedCrew || []).forEach(c => {
+        if ((c.position === 'CDB' || c.position === 'OPL') && !crewMap.has(c.crewId)) {
+          crewMap.set(c.crewId, c);
+        }
+      });
+    });
+    const crewList = [...crewMap.values()];
+    if (crewList.length) {
+      descParts.push('Crew:\\n' + crewList.map(c =>
+        '  ' + c.position + ': ' + c.givenNames + ' ' + c.surname + ' (' + c.crewId + ')'
+      ).join('\\n'));
+    }
+
     cal.push('BEGIN:VEVENT');
     cal.push(fold('UID:' + icsEscape(uid)));
     cal.push('DTSTAMP:' + now);
@@ -1241,6 +1257,11 @@ function _doExportIcal(activities, crewId, suffix = '') {
     cal.push(fold('SUMMARY:' + icsEscape(summary)));
     if (location) cal.push(fold('LOCATION:' + icsEscape(location)));
     if (descParts.length) cal.push(fold('DESCRIPTION:' + descParts.join('\\n')));
+    // Add CDB and OPL as calendar attendees
+    crewList.forEach(c => {
+      const cn = c.givenNames + ' ' + c.surname + ' (' + c.position + ')';
+      cal.push(fold('ATTENDEE;ROLE=REQ-PARTICIPANT;CN=' + icsEscape(cn) + ':mailto:' + c.crewId.toLowerCase() + '@ram.ma'));
+    });
     cal.push('END:VEVENT');
   });
   cal.push('END:VCALENDAR');
