@@ -1257,11 +1257,6 @@ function _doExportIcal(activities, crewId, suffix = '') {
     cal.push(fold('SUMMARY:' + icsEscape(summary)));
     if (location) cal.push(fold('LOCATION:' + icsEscape(location)));
     if (descParts.length) cal.push(fold('DESCRIPTION:' + descParts.join('\\n')));
-    // Add CDB and OPL as calendar attendees
-    crewList.forEach(c => {
-      const cn = c.givenNames + ' ' + c.surname + ' (' + c.position + ')';
-      cal.push(fold('ATTENDEE;ROLE=REQ-PARTICIPANT;CN=' + icsEscape(cn) + ':mailto:' + c.crewId.toLowerCase() + '@ram.ma'));
-    });
     cal.push('END:VEVENT');
   });
   cal.push('END:VCALENDAR');
