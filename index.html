@@ -996,7 +996,6 @@ function renderRoster(data) {
             <div class="tl-label">${s.startStation} → ${s.endStation}</div>
             <div class="tl-sublabel">${s.role?.id||role} · ${s.aircraftType||''} ${s.tail ? '· '+s.tail : ''} · Block ${fmtDuration(s.blockTimeMinutes||s.durationMinutes)}</div>
             ${schedLine}
-            ${trnTags ? '<div class="sched-line">Training: '+trnTags+'</div>' : ''}
             ${buildCrewHTML(s.assignedCrew, s.trainingTags)}
           </div>
           <div class="tl-time">${actSt}<br>${actEt}</div>
@@ -1231,7 +1230,6 @@ function _doExportIcal(activities, crewId, suffix = '') {
         + (l.statusLabel  ? '  [' + l.statusLabel + ']' : ''));
     });
     const trnTags = [...new Set(subs.flatMap(s => (s.trainingTags||[]).map(t => t.descr)))].filter(Boolean);
-    if (trnTags.length) descParts.push('Training: ' + trnTags.join(', '));
 
     // Collect unique CDB and OPL crew across all flight legs
     const crewMap = new Map();
