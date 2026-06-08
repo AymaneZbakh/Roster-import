@@ -1,17 +1,13 @@
 name: Automated RAM Roster Sync
-
 on:
   schedule:
-    - cron: '0 4 * * *'
+    - cron: '0 */2 * * *'
   workflow_dispatch:
-
 permissions:
   contents: write
-
 jobs:
   fetch-and-publish:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout Repository Code
       uses: actions/checkout@v4
@@ -23,10 +19,75 @@ jobs:
 
     - name: Install Browser Dependencies
       run: |
-        pip install playwright
+        pip install playwright requests
         playwright install chromium
 
+    - name: Pre-check — Detect Roster Change
+      id: precheck
+      env:
+        CREW_USER: ${{ secrets.RAM_USER }}
+        CREW_PASS: ${{ secrets.RAM_PASS }}
+      run: |
+        python - <<EOF
+        import os
+        import json
+        import hashlib
+        import requests
+
+        username = os.environ.get("CREW_USER")
+        password = os.environ.get("CREW_PASS")
+
+        # --- Step 1: Get a session token via plain HTTP login (no browser) ---
+        session = requests.Session()
+        session.headers.update({"User-Agent": "Mozilla/5.0"})
+
+        print("Attempting lightweight login for pre-check...")
+        login_resp = session.post(
+            "https://crewaccess.ram.jepphost.com/access/crewweb/api/login",
+            json={"username": username, "password": password},
+            timeout=20
+        )
+
+        if login_resp.status_code not in (200, 201):
+            # Can't do pre-check (ADFS/SSO may require browser), skip to full sync
+            print("Pre-check login failed (likely ADFS). Proceeding to full sync.")
+            with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                f.write("changed=true\n")
+            exit(0)
+
+        # --- Step 2: Fetch roster lightly and hash it ---
+        roster_resp = session.get(
+            "https://crewaccess.ram.jepphost.com/access/crewweb/crew/roster/v1",
+            timeout=20
+        )
+
+        if roster_resp.status_code != 200:
+            print("Pre-check roster fetch failed. Proceeding to full sync.")
+            with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                f.write("changed=true\n")
+            exit(0)
+
+        new_hash = hashlib.md5(roster_resp.content).hexdigest()
+        print(f"Remote roster hash: {new_hash}")
+
+        # --- Step 3: Hash the existing local roster.json ---
+        try:
+            with open("roster.json", "rb") as f:
+                old_hash = hashlib.md5(f.read()).hexdigest()
+            print(f"Local roster hash:  {old_hash}")
+        except FileNotFoundError:
+            old_hash = ""
+            print("No local roster.json found. Will do full sync.")
+
+        # --- Step 4: Output result ---
+        changed = new_hash != old_hash
+        print(f"Roster changed: {changed}")
+        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+            f.write(f"changed={'true' if changed else 'false'}\n")
+        EOF
+
     - name: Run Automated Browser Login
+      if: steps.precheck.outputs.changed == 'true'
       env:
         CREW_USER: ${{ secrets.RAM_USER }}
         CREW_PASS: ${{ secrets.RAM_PASS }}
@@ -44,53 +105,53 @@ jobs:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
 
-            roster_data = None
-            def handle_response(response):
-                global roster_data
-                if "/crew/roster/v1" in response.url and response.status == 200:
-                    try:
-                        roster_data = response.json()
-                        print("🎯 Intercepted roster JSON data payload.")
-                    except Exception:
-                        pass
-
-            page.on("response", handle_response)
-
             print("Navigating to RAM CrewAccess...")
             page.goto("https://crewaccess.ram.jepphost.com/access/crewweb/")
 
-            # Wait for either standard login box or the ADFS login box
             print("Waiting for login input fields...")
-            page.wait_for_selector("input[id*='userNameInput'], input[type='text'], input[name='username']", timeout=45000)
-            
-            # Fill username and password using standard or ADFS selectors
-            if page.locator("input[id*='userNameInput']").is_visible():
+            page.wait_for_selector(
+                "input[id*='userNameInput'], input[type='text'], input[name='username']",
+                timeout=45000
+            )
+
+            is_adfs = page.locator("input[id*='userNameInput']").is_visible()
+
+            if is_adfs:
                 page.fill("input[id*='userNameInput']", username)
                 page.fill("input[id*='passwordInput']", password)
                 print("Submitting ADFS login credentials...")
-                page.click("span[id*='submitButton'], input[type='submit']")
+                with page.expect_response(
+                    lambda r: "/crew/roster/v1" in r.url and r.status == 200,
+                    timeout=60000
+                ) as response_info:
+                    page.click("span[id*='submitButton'], input[type='submit']")
             else:
                 page.fill("input[type='text'], input[name='username']", username)
                 page.fill("input[type='password']", password)
                 print("Submitting standard login credentials...")
-                page.click("button[type='submit'], input[type='submit']")
+                with page.expect_response(
+                    lambda r: "/crew/roster/v1" in r.url and r.status == 200,
+                    timeout=60000
+                ) as response_info:
+                    page.click("button[type='submit'], input[type='submit']")
 
-            # Wait for data request to finish
-            print("Waiting for roster data to sync...")
-            page.wait_for_timeout(15000) 
+            print("Waiting for roster API response...")
+            response = response_info.value
 
-            if roster_data:
+            if response.ok:
+                roster_data = response.json()
                 with open("roster.json", "w") as f:
                     json.dump(roster_data, f, indent=2)
-                print("Saved roster.json.")
+                print("✅ Saved roster.json successfully.")
             else:
-                print("Failed to catch data payload.")
+                print(f"❌ Roster API returned status {response.status}")
                 exit(1)
-                
+
             browser.close()
         EOF
 
     - name: Commit and Update GitHub Pages
+      if: steps.precheck.outputs.changed == 'true'
       run: |
         git config --global user.name "Roster Automation Bot"
         git config --global user.email "bot@github.actions"
