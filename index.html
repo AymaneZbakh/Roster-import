@@ -350,11 +350,6 @@
     }
     .select-month:hover { border-color: var(--ram-red); color: var(--text); }
 
-    @media (max-width: 640px) {
-      .select-month { margin-left: 0; width: 100%; margin-top: 4px; }
-      .header { gap: 14px; }
-      .header-logo-container { width: 85px; }
-    }
 
     .activity-list { display: flex; flex-direction: column; gap: 8px; }
 
@@ -617,11 +612,86 @@
     .empty-state span { font-size: 12px; font-family: var(--mono); }
 
     @media (max-width: 640px) {
-      .app { padding: 1.25rem 1rem 3rem; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .detail-grid { grid-template-columns: repeat(2, 1fr); }
-      .tl-row { grid-template-columns: 72px 1fr auto; gap: 8px; }
-      .header-text h1 { font-size: 15px; }
+      /* ── Layout ── */
+      .app { padding: 1rem 0.75rem 5rem; }
+
+      /* ── Header ── */
+      .header { flex-wrap: wrap; gap: 10px; padding-bottom: 1rem; margin-bottom: 1.25rem; }
+      .header-logo-container { width: 75px; }
+      .header-text { flex: 1; min-width: 0; }
+      .header-text h1 { font-size: 13px; }
+      .header-text p  { font-size: 10px; }
+
+      /* Stack header buttons full-width below */
+      .btn, #nextFlightBtn {
+        width: 100%; justify-content: center; order: 3; margin-left: 0;
+      }
+
+      /* ── Stats ── */
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 1rem; }
+      .stat { padding: 10px 12px; }
+      .stat-value { font-size: 22px; }
+
+      /* ── Filters ── */
+      .filters { gap: 5px; row-gap: 6px; margin-bottom: 1rem; }
+      .filter-btn { font-size: 11px; padding: 4px 9px; }
+      .select-month { margin-left: 0; width: 100%; margin-top: 2px; order: 10; }
+      .view-toggle { margin-left: auto; }
+
+      /* ── Card header ── */
+      .card-header { padding: 11px 12px; gap: 6px; flex-wrap: wrap; }
+      .type-badge { font-size: 8px; padding: 2px 6px; }
+      .card-date { font-size: 10px; min-width: unset; }
+      .card-route { font-size: 13px; flex: 1; }
+      .card-time { font-size: 10px; }
+      .urgent-badge { font-size: 8px; padding: 2px 5px; }
+      .urgent-countdown { font-size: 9px; }
+
+      /* ── Card body ── */
+      .card-body { padding: 12px; }
+      .detail-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+      .detail-item span { font-size: 12px; }
+
+      /* ── Timeline ── */
+      .tl-row {
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
+        gap: 4px 8px;
+        padding: 9px 10px;
+      }
+      .tl-type { grid-column: 1 / -1; font-size: 9px; }
+      .tl-label { font-size: 12px; }
+      .tl-sublabel { font-size: 10px; }
+      .tl-time { font-size: 10px; }
+
+      /* ── Crew pills ── */
+      .crew-pill { padding: 5px 8px; gap: 7px; }
+      .crew-name { font-size: 11px; }
+      .crew-meta { font-size: 9px; }
+
+      /* ── Totals bar ── */
+      .totals-bar { gap: 10px; padding: 10px 12px; }
+      .totals-sep { display: none; }
+      .totals-item .t-val { font-size: 13px; }
+      .totals-item .t-lbl { font-size: 9px; }
+
+      /* ── Selection bar ── */
+      .selection-bar { flex-wrap: wrap; gap: 8px; padding: 10px 12px; bottom: 1rem; }
+      .sel-count { width: 100%; text-align: center; flex: none; }
+      .btn-sel { flex: 1; justify-content: center; font-size: 11px; padding: 8px 6px; }
+
+      /* ── Next duty banner ── */
+      .next-flight-banner { font-size: 9px; padding: 5px 12px; gap: 5px; }
+
+      /* ── Calendar ── */
+      .cal-cell { min-height: 52px; padding: 4px 3px; }
+      .cal-cell-day { font-size: 10px; margin-bottom: 3px; }
+      .cal-pill { font-size: 9px; padding: 1px 3px; }
+      .cal-month-label { font-size: 15px; }
+      #calDayCards { padding: 10px; gap: 6px; }
+      .day-card-header { padding: 9px 11px; gap: 8px; }
+      .day-card-route { font-size: 12px; }
+      .day-card-time, .day-card-dur { font-size: 10px; }
     }
 
     @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -919,12 +989,6 @@
       font-weight: 600;
     }
 
-    @media (max-width: 640px) {
-      .cal-cell { min-height: 58px; padding: 5px 4px; }
-      .cal-cell-day { font-size: 11px; }
-      .cal-pill { font-size: 9px; padding: 1px 4px; }
-      .cal-month-label { font-size: 16px; }
-    }
 
     /* ── TOAST NOTIFICATION ─────────────────────────────────────────────── */
     #toastContainer {
