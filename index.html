@@ -1622,8 +1622,9 @@ function renderRoster(data) {
     card.dataset.id   = cardId;
 
     const now = Date.now();
-    const depMs = new Date(act.startTime).getTime();
-    const msUntil = depMs - now;
+    // Use first flight-leg departure as takeoff time; fallback to duty start
+    const firstLegTime = flightLegs.length ? new Date(flightLegs[0].startTime).getTime() : new Date(act.startTime).getTime();
+    const msUntil = firstLegTime - now;
     const isUrgent = type === 'flight' && msUntil > 0 && msUntil < 86400000;
 
     const flightKey = act.startTime + '|' + (act.startStation||'') + '|' + (act.endStation||'');
@@ -1669,7 +1670,7 @@ function renderRoster(data) {
       const tid = setInterval(() => {
         const el = document.getElementById('countdown-' + cardId);
         if (!el) { clearInterval(tid); return; }
-        const remaining = new Date(act.startTime).getTime() - Date.now();
+        const remaining = firstLegTime - Date.now();
         if (remaining <= 0) { el.textContent = 'Departing now'; clearInterval(tid); return; }
         el.textContent = fmtCountdown(remaining);
       }, 30000);
@@ -1726,8 +1727,12 @@ function renderFiltered() {
     visible.forEach(c => activityList.appendChild(c.el));
 
     if (nextCard) {
-      const depMs = new Date(nextCard.act.startTime).getTime() - now;
-      const isCountdownMode = depMs < 86400000; // < 24 hours
+      // Use the first flight-leg departure time as the real takeoff time (fallback to duty start)
+      const firstLeg = (nextCard.act.activities || []).find(s => s.type === 'flight-leg');
+      const takeoffIso = firstLeg ? firstLeg.startTime : nextCard.act.startTime;
+      const takeoffMs  = new Date(takeoffIso).getTime();
+      const depMs      = takeoffMs - now;
+      const isCountdownMode = depMs < 86400000; // < 24 hours until takeoff
 
       nextCard.el.classList.add('next-flight-card');
 
@@ -1745,10 +1750,6 @@ function renderFiltered() {
         nextCard.el.classList.add('countdown-mode');
         btn.classList.add('countdown-mode');
 
-        const depH = Math.floor(depMs / 3600000);
-        const depM = Math.floor((depMs % 3600000) / 60000);
-        const depS = Math.floor((depMs % 60000) / 1000);
-
         function fmtCd(ms) {
           const s = Math.max(0, Math.floor(ms / 1000));
           const h = Math.floor(s / 3600);
@@ -1761,15 +1762,15 @@ function renderFiltered() {
 
         const banner = document.createElement('div');
         banner.className = 'countdown-banner';
-        const cdId = 'cdbanner-' + (nextCard.act.startTime || Math.random());
+        const cdId = 'cdbanner-' + (takeoffIso || Math.random());
         banner.innerHTML = `<span class="cd-dot"></span><i class="ti ti-clock-bolt"></i> TAKEOFF IN &nbsp;<span class="cd-timer" id="${cdId}">${fmtCd(depMs)}</span>`;
         nextCard.el.insertBefore(banner, nextCard.el.firstChild);
 
-        // Live countdown every second
+        // Live countdown every second targeting actual takeoff time
         const tid = setInterval(() => {
           const el = document.getElementById(cdId);
           if (!el) { clearInterval(tid); return; }
-          const rem = new Date(nextCard.act.startTime).getTime() - Date.now();
+          const rem = takeoffMs - Date.now();
           if (rem <= 0) { el.closest('.countdown-banner').innerHTML = `<span class="cd-dot"></span><i class="ti ti-plane-departure"></i> DEPARTING NOW`; clearInterval(tid); return; }
           el.textContent = fmtCd(rem);
         }, 1000);
