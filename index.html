@@ -1130,7 +1130,7 @@
       <i class="ti ti-calendar-down"></i> Export Calendar (.ics)
     </button>
     <button id="nextFlightBtn" onclick="scrollToNextFlight()">
-      <i class="ti ti-plane"></i> Next Flight
+      <i class="ti ti-calendar-event"></i> Next Duty
     </button>
     <button class="btn" id="refreshBtn" onclick="refreshRoster()">
       <i class="ti ti-refresh"></i> Refresh
@@ -1630,7 +1630,7 @@ function renderRoster(data) {
   });
 
   renderFiltered();
-  // Auto-scroll to next flight on first load (slight delay for DOM paint)
+  // Auto-scroll to next duty on first load (slight delay for DOM paint)
   setTimeout(() => { scrollToNextFlight(); }, 400);
 }
 
@@ -1655,24 +1655,36 @@ function renderFiltered() {
       if (prev) prev.remove();
     });
 
-    // Find the next upcoming flight
+    // Find the next upcoming duty of any type
     const now = Date.now();
     const nextCard = visible
-      .filter(c => c.type === 'flight' && new Date(c.act.startTime).getTime() > now)
+      .filter(c => new Date(c.act.startTime).getTime() > now)
       .sort((a, b) => new Date(a.act.startTime) - new Date(b.act.startTime))[0];
 
     visible.forEach(c => activityList.appendChild(c.el));
 
     if (nextCard) {
       nextCard.el.classList.add('next-flight-card');
-      // Insert banner at the very top of the card
+
+      // Auto-open the card body
+      const body    = nextCard.el.querySelector('.card-body');
+      const chevron = nextCard.el.querySelector('.card-chevron');
+      if (body)    body.classList.add('open');
+      if (chevron) chevron.classList.add('open');
+
+      // Build banner label based on duty type
+      const dutyIcons = { flight: 'ti-plane-departure', standby: 'ti-clock', training: 'ti-school', other: 'ti-briefcase' };
+      const dutyLabels = { flight: 'NEXT FLIGHT', standby: 'NEXT RESERVE', training: 'NEXT TRAINING', other: 'NEXT DUTY' };
+      const dutyIcon  = dutyIcons[nextCard.type]  || 'ti-calendar-event';
+      const dutyLabel = dutyLabels[nextCard.type] || 'NEXT DUTY';
+
       const banner = document.createElement('div');
       banner.className = 'next-flight-banner';
       const depMs = new Date(nextCard.act.startTime).getTime() - now;
       const depH  = Math.floor(depMs / 3600000);
       const depM  = Math.floor((depMs % 3600000) / 60000);
       const countdown = depH > 0 ? `in ${depH}h ${depM.toString().padStart(2,'0')}m` : `in ${depM}m`;
-      banner.innerHTML = `<span class="nf-dot"></span><i class="ti ti-plane-departure"></i> NEXT FLIGHT &nbsp;·&nbsp; Departs ${countdown}`;
+      banner.innerHTML = `<span class="nf-dot"></span><i class="ti ${dutyIcon}"></i> ${dutyLabel} &nbsp;·&nbsp; Starts ${countdown}`;
       nextCard.el.insertBefore(banner, nextCard.el.firstChild);
 
       // Show the jump button
@@ -1736,12 +1748,13 @@ monthSelect.addEventListener('change', e => {
   }
 });
 
-// ── NEXT FLIGHT SCROLL ────────────────────────────────────────────────────
+// ── NEXT DUTY SCROLL ──────────────────────────────────────────────────────
 function scrollToNextFlight() {
   const btn = document.getElementById('nextFlightBtn');
-  if (btn._nextCard) {
-    btn._nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
+  if (!btn._nextCard) return;
+  const el = btn._nextCard;
+  const top = el.getBoundingClientRect().top + window.scrollY - 16;
+  window.scrollTo({ top, behavior: 'smooth' });
 }
 
 // ── CARD TOGGLE ────────────────────────────────────────────────────────────
