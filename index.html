@@ -83,7 +83,7 @@
 
     .pin-box .logo-container {
       width: 100%;
-      max-width: 260px;
+      max-width: 220px;
       height: auto;
       margin: 0 auto 1.5rem;
       display: flex;
@@ -95,7 +95,6 @@
       width: 100%;
       height: auto;
       object-fit: contain;
-      /* Light drop glow to elevate the brand logo against dark aesthetic surfaces */
       filter: drop-shadow(0 0 14px rgba(200,16,46,0.15)) brightness(1.05);
     }
 
@@ -221,7 +220,7 @@
     }
 
     .header-logo-container {
-      width: 110px;
+      width: 140px;
       height: auto;
       display: flex;
       align-items: center;
@@ -353,7 +352,7 @@
     @media (max-width: 640px) {
       .select-month { margin-left: 0; width: 100%; margin-top: 4px; }
       .header { gap: 14px; }
-      .header-logo-container { width: 85px; }
+      .header-logo-container { width: 100px; }
     }
 
     .activity-list { display: flex; flex-direction: column; gap: 8px; }
@@ -1016,7 +1015,7 @@
     .urgent-badge i { font-size: 9px; }
     @keyframes urgentPulse {
       0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(232,168,64,0.3); }
-      50%       { opacity: 0.85; box-shadow: 0 0 0 4px rgba(232,168,64,0); }
+      50% { opacity: 0.85; box-shadow: 0 0 0 4px rgba(232,168,64,0); }
     }
     .urgent-countdown {
       font-size: 10px;
@@ -1030,1027 +1029,1096 @@
 </head>
 <body>
 
-<div id="toastContainer"></div>
+  <div id="toastContainer"></div>
 
-<div id="pinOverlay" class="pin-overlay">
-  <div class="pin-box">
-    <div class="logo-container">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Logo_Royal_Air_Maroc.svg/3840px-Logo_Royal_Air_Maroc.svg.png" alt="Royal Air Maroc Logo">
-    </div>
-    <h2>Protected Console</h2>
-    <p>Authentication required to review flight rosters.</p>
-    <div class="pin-input-wrapper">
-      <input type="password" id="pinInput" maxlength="6" placeholder="••••••" autocomplete="off" readonly>
-    </div>
-    
-    <div id="errorMsg" class="error-msg hidden">Invalid access credential code</div>
-
-    <div class="numpad-grid">
-      <button class="numpad-btn" onclick="pressKey('1')">1</button>
-      <button class="numpad-btn" onclick="pressKey('2')">2</button>
-      <button class="numpad-btn" onclick="pressKey('3')">3</button>
-      <button class="numpad-btn" onclick="pressKey('4')">4</button>
-      <button class="numpad-btn" onclick="pressKey('5')">5</button>
-      <button class="numpad-btn" onclick="pressKey('6')">6</button>
-      <button class="numpad-btn" onclick="pressKey('7')">7</button>
-      <button class="numpad-btn" onclick="pressKey('8')">8</button>
-      <button class="numpad-btn" onclick="pressKey('9')">9</button>
-      <button class="numpad-btn action-btn" onclick="pressClear()">Clear</button>
-      <button class="numpad-btn" onclick="pressKey('0')">0</button>
-      <button class="numpad-btn action-btn" onclick="pressDelete()"><i class="ti ti-backspace"></i></button>
-    </div>
-
-    <button class="pin-btn" onclick="verifyPinCode()">Unlock Workspace</button>
-  </div>
-</div>
-
-<div id="appContainer" class="app">
-  <div class="header">
-    <div class="header-logo-container">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Logo_Royal_Air_Maroc.svg/3840px-Logo_Royal_Air_Maroc.svg.png" alt="Royal Air Maroc Logo">
-    </div>
-    <div class="header-text">
-      <h1>Automated Roster Platform</h1>
-      <p id="crewLabel">Connecting to cloud system...</p>
-    </div>
-    <button class="btn hidden" id="icalBtn" onclick="exportIcal()">
-      <i class="ti ti-calendar-down"></i> Export Calendar (.ics)
-    </button>
-    <button class="btn" id="refreshBtn" onclick="refreshRoster()">
-      <i class="ti ti-refresh"></i> Refresh
-    </button>
-  </div>
-
-  <div id="statsGrid" class="stats-grid hidden">
-    <div class="stat"><div class="stat-label">Flights</div><div class="stat-value" id="statFlights">0</div></div>
-    <div class="stat"><div class="stat-label">Duties</div><div class="stat-value" id="statDuties">0</div></div>
-    <div class="stat"><div class="stat-label">Reserve</div><div class="stat-value" id="statStandby">0</div></div>
-    <div class="stat"><div class="stat-label">Training</div><div class="stat-value" id="statTraining">0</div></div>
-  </div>
-
-  <div id="filterBar" class="filters hidden">
-    <span class="filters-label">Show:</span>
-    <button class="filter-btn active" data-filter="all">All</button>
-    <button class="filter-btn" data-filter="flight">Flights</button>
-    <button class="filter-btn" data-filter="standby">Reserve</button>
-    <button class="filter-btn" data-filter="training">Training</button>
-    <button class="filter-btn" data-filter="other">Other</button>
-    
-    <select id="monthSelect" class="select-month">
-      <option value="all">All Months</option>
-    </select>
-
-    <div class="view-toggle">
-      <button class="view-btn active" id="btnListView" onclick="setView('list')" title="List view"><i class="ti ti-layout-list"></i></button>
-      <button class="view-btn" id="btnCalView" onclick="setView('calendar')" title="Calendar view"><i class="ti ti-calendar-month"></i></button>
-    </div>
-  </div>
-
-  <div id="activityList" class="activity-list">
-    <div class="empty-state" id="loadingState">
-      <i class="ti ti-loader spin"></i>
-      <p>Synchronizing Live Roster File</p>
-      <span>Pulling background data layers...</span>
-    </div>
-  </div>
-
-  <div id="calendarView" class="calendar-view hidden">
-    <div class="cal-header">
-      <button class="cal-nav" id="calPrev" onclick="calNav(-1)"><i class="ti ti-chevron-left"></i></button>
-      <span class="cal-month-label" id="calMonthLabel"></span>
-      <button class="cal-nav" id="calNext" onclick="calNav(1)"><i class="ti ti-chevron-right"></i></button>
-    </div>
-    <div class="cal-grid-head">
-      <span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span>
-    </div>
-    <div class="cal-grid" id="calGrid"></div>
-    <div id="calDayPanel" class="cal-day-panel hidden">
-      <div class="cal-day-panel-header">
-        <span id="calDayTitle" class="cal-day-title"></span>
-        <span id="calDayCount" class="cal-day-count"></span>
+  <div id="pinOverlay" class="pin-overlay">
+    <div class="pin-box">
+      <div class="logo-container">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Royal_Air_Maroc_Logo.svg/512px-Royal_Air_Maroc_Logo.svg.png" alt="Royal Air Maroc Logo">
       </div>
-      <div id="calDayCards"></div>
+      <h2>Crew Access Authentication</h2>
+      <p>Provide synchronization passkey to open workspace</p>
+      
+      <div class="pin-input-wrapper">
+        <input type="password" id="pinInput" maxlength="6" placeholder="••••••" readonly autocomplete="off">
+      </div>
+      
+      <div id="errorMsg" class="error-msg hidden">Invalid Access Code</div>
+      
+      <div class="numpad-grid">
+        <button class="numpad-btn" onclick="pressKey('1')">1</button>
+        <button class="numpad-btn" onclick="pressKey('2')">2</button>
+        <button class="numpad-btn" onclick="pressKey('3')">3</button>
+        <button class="numpad-btn" onclick="pressKey('4')">4</button>
+        <button class="numpad-btn" onclick="pressKey('5')">5</button>
+        <button class="numpad-btn" onclick="pressKey('6')">6</button>
+        <button class="numpad-btn" onclick="pressKey('7')">7</button>
+        <button class="numpad-btn" onclick="pressKey('8')">8</button>
+        <button class="numpad-btn" onclick="pressKey('9')">9</button>
+        <button class="numpad-btn action-btn" onclick="pressClear()">CLR</button>
+        <button class="numpad-btn" onclick="pressKey('0')">0</button>
+        <button class="numpad-btn action-btn" onclick="pressDelete()"><i class="ti ti-backspace"></i></button>
+      </div>
+      
+      <button class="pin-btn" onclick="verifyPinCode()">UNLOCK WORKSPACE</button>
     </div>
   </div>
 
-  <div id="totalsBar" class="totals-bar hidden">
-    <span class="totals-label">Totals</span>
-    <div class="totals-item"><span class="t-val" id="totHours">—</span><span class="t-lbl">Block hrs</span></div>
-    <div class="totals-sep"></div>
-    <div class="totals-item"><span class="t-val" id="totDuty">—</span><span class="t-lbl">Duty hrs</span></div>
-    <div class="totals-sep"></div>
-    <div class="totals-item"><span class="t-val" id="totFlights">—</span><span class="t-lbl">Flights</span></div>
-    <div class="totals-sep"></div>
-    <div class="totals-item"><span class="t-val" id="totActivities">—</span><span class="t-lbl">Activities</span></div>
-  </div>
-
-  <div id="selectionBar" class="selection-bar invisible">
-    <span class="sel-count"><strong id="selCount">0</strong> selected</span>
-    <button class="btn-sel btn-sel-ical" onclick="exportSelectedIcal()"><i class="ti ti-calendar-down"></i> Calendar (.ics)</button>
-    <button class="btn-sel btn-sel-csv" onclick="exportSelectedCsv()"><i class="ti ti-file-spreadsheet"></i> Export CSV</button>
-    <button class="btn-sel btn-sel-clear" onclick="clearSelection()"><i class="ti ti-x"></i> Clear</button>
-  </div>
-</div>
-
-<script>
-const activityList   = document.getElementById('activityList');
-const monthSelect    = document.getElementById('monthSelect');
-const pinOverlay     = document.getElementById('pinOverlay');
-const appContainer   = document.getElementById('appContainer');
-const pinInput       = document.getElementById('pinInput');
-const errorMsg       = document.getElementById('errorMsg');
-const selectionBar   = document.getElementById('selectionBar');
-const selCountEl     = document.getElementById('selCount');
-const totalsBar      = document.getElementById('totalsBar');
-
-let allCards       = [];   // { el, act, type, month, durationMinutes, blockMinutes }
-let selectedIds    = new Set();
-let currentFilter  = 'all';
-let currentMonthFilter = 'all';
-let rosterData     = null;
-let cardIdCounter  = 0;
-let knownFlightKeys = new Set(); // track previously seen flights for new-flight detection
-let urgentTimers   = [];         // interval IDs for countdown ticking
-
-// ── TOAST NOTIFICATION ────────────────────────────────────────────────────
-function showToast(title, message, subtext) {
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.innerHTML = `
-    <div class="toast-icon"><i class="ti ti-plane"></i></div>
-    <div class="toast-body">
-      <div class="toast-title">${title}</div>
-      <div class="toast-msg">${message}</div>
-      ${subtext ? `<div class="toast-time">${subtext}</div>` : ''}
+  <div id="appContainer" class="app">
+    <div class="header">
+      <div class="header-logo-container">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Royal_Air_Maroc_Logo.svg/512px-Royal_Air_Maroc_Logo.svg.png" alt="RAM Logo">
+      </div>
+      <div class="header-text">
+        <h1>Flight Operations Dashboard</h1>
+        <p id="crewLabel">Establishing roster link...</p>
+      </div>
+      <button class="btn" id="refreshBtn" onclick="refreshRoster()">
+        <i class="ti ti-refresh"></i>Sync
+      </button>
+      <button class="btn hidden" id="icalBtn" onclick="exportIcal()">
+        <i class="ti ti-calendar-share"></i>Export Full iCal
+      </button>
     </div>
-    <button class="toast-close" onclick="dismissToast(this.closest('.toast'))"><i class="ti ti-x"></i></button>
-    <div class="toast-progress"></div>`;
-  container.appendChild(toast);
-  const timer = setTimeout(() => dismissToast(toast), 4500);
-  toast._timer = timer;
-}
 
-function dismissToast(toast) {
-  if (!toast || !toast.isConnected) return;
-  clearTimeout(toast._timer);
-  toast.classList.add('hide');
-  toast.addEventListener('animationend', () => toast.remove(), { once: true });
-}
+    <div id="statsGrid" class="stats-grid hidden">
+      <div class="stat"><div class="stat-label">Flights</div><div class="stat-value" id="statFlights">0</div></div>
+      <div class="stat"><div class="stat-label">Reserve</div><div class="stat-value" id="statStandby">0</div></div>
+      <div class="stat"><div class="stat-label">Training</div><div class="stat-value" id="statTraining">0</div></div>
+      <div class="stat"><div class="stat-label">Duties</div><div class="stat-value" id="statDuties">0</div></div>
+    </div>
 
-// ── PIN ────────────────────────────────────────────────────────────────────
-function pressKey(num) {
-  errorMsg.classList.add('hidden');
-  if (pinInput.value.length < 6) pinInput.value += num;
-}
-function pressDelete() {
-  errorMsg.classList.add('hidden');
-  pinInput.value = pinInput.value.slice(0, -1);
-}
-function pressClear() {
-  errorMsg.classList.add('hidden');
-  pinInput.value = '';
-}
-// SHA-256 hash of the PIN (never store the plain PIN in source)
-// Hash of "080425"
-const CORRECT_PIN_HASH = "599d1db9da4631903b0c74ea64d598dead94905690b47ef7b03ed2c6a470de3c";
+    <div id="filterBar" class="filters hidden">
+      <span class="filters-label">Show:</span>
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="flight">Flights</button>
+      <button class="filter-btn" data-filter="standby">Reserve</button>
+      <button class="filter-btn" data-filter="training">Training</button>
+      <button class="filter-btn" data-filter="other">Other</button>
 
-async function hashPin(pin) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(pin);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
+      <select id="monthSelect" class="select-month">
+        <option value="all">All Months</option>
+      </select>
 
-async function verifyPinCode() {
-  const entered = pinInput.value;
-  const enteredHash = await hashPin(entered);
-  if (enteredHash === CORRECT_PIN_HASH) {
-    errorMsg.classList.add('hidden');
-    pinOverlay.classList.add('hidden');
-    appContainer.style.display = 'block';
-    initializeRosterSync();
-  } else {
-    errorMsg.classList.remove('hidden');
-    pinInput.value = '';
-  }
-}
+      <div class="view-toggle">
+        <button class="view-btn active" id="btnListView" onclick="setView('list')" title="List view"><i class="ti ti-layout-list"></i></button>
+        <button class="view-btn" id="btnCalView" onclick="setView('calendar')" title="Calendar view"><i class="ti ti-calendar-month"></i></button>
+      </div>
+    </div>
 
-// ── DATA FETCH ─────────────────────────────────────────────────────────────
-async function initializeRosterSync() {
-  try {
-    const response = await fetch('roster.json');
-    if (response.ok) {
-      const data = await response.json();
-      // Seed known flights silently on first load (no toasts)
+    <div id="activityList" class="activity-list">
+      <div class="empty-state" id="loadingState">
+        <i class="ti ti-loader spin"></i>
+        <p>Synchronizing Live Roster File</p>
+        <span>Pulling background data layers...</span>
+      </div>
+    </div>
+
+    <div id="calendarView" class="calendar-view hidden">
+      <div class="cal-header">
+        <button class="cal-nav" id="calPrev" onclick="calNav(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="cal-month-label" id="calMonthLabel"></span>
+        <button class="cal-nav" id="calNext" onclick="calNav(1)"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <div class="cal-grid-head">
+        <span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+
+      <div id="calDayPanel" class="cal-day-panel hidden">
+        <div class="cal-day-panel-header">
+          <span id="calDayTitle" class="cal-day-title"></span>
+          <span id="calDayCount" class="cal-day-count"></span>
+        </div>
+        <div id="calDayCards"></div>
+      </div>
+    </div>
+
+    <div id="totalsBar" class="totals-bar hidden">
+      <span class="totals-label">Totals</span>
+      <div class="totals-item"><span class="t-val" id="totHours">—</span><span class="t-lbl">Block hrs</span></div>
+      <div class="totals-sep"></div>
+      <div class="totals-item"><span class="t-val" id="totDuty">—</span><span class="t-lbl">Duty hrs</span></div>
+      <div class="totals-sep"></div>
+      <div class="totals-item"><span class="t-val" id="totFlights">—</span><span class="t-lbl">Flights</span></div>
+    </div>
+
+    <div id="selectionBar" class="selection-bar invisible">
+      <div class="sel-count"><span id="selCountLabel">0</span> items selected</div>
+      <button class="btn-sel btn-sel-clear" onclick="clearSelection()">Clear</button>
+      <button class="btn-sel btn-sel-ical" onclick="exportSelectedIcal()"><i class="ti ti-calendar-plus"></i> Export iCal</button>
+      <button class="btn-sel btn-sel-csv" onclick="exportSelectedCsv()"><i class="ti ti-file-spreadsheet"></i> Export CSV</button>
+    </div>
+  </div>
+
+  <script>
+    // System Memory Layers
+    let allCards = [];
+    let selectedIds = new Set();
+    let rosterData = null;
+    let cardIdCounter = 0;
+    let currentFilter = 'all';
+    let currentMonthFilter = 'all';
+    let knownFlightKeys = new Set();
+    let urgentTimers = [];
+
+    const pinInput = document.getElementById('pinInput');
+    const errorMsg = document.getElementById('errorMsg');
+    const pinOverlay = document.getElementById('pinOverlay');
+    const appContainer = document.getElementById('appContainer');
+    const activityList = document.getElementById('activityList');
+    const totalsBar = document.getElementById('totalsBar');
+    const selectionBar = document.getElementById('selectionBar');
+    const monthSelect = document.getElementById('monthSelect');
+
+    // Filter Bar Input Listener
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderFiltered();
+        if (currentView === 'calendar') renderCalendar();
+      });
+    });
+
+    monthSelect.addEventListener('change', (e) => {
+      currentMonthFilter = e.target.value;
+      renderFiltered();
+      if (currentView === 'calendar') {
+        if (currentMonthFilter !== 'all') {
+          const [y, m] = currentMonthFilter.split('-').map(Number);
+          calYear = y;
+          calMonth = m - 1;
+        }
+        renderCalendar();
+      }
+    });
+
+    // Universal Date-Time and String Parsing Engines
+    function fmtDateTime(iso) {
+      if (!iso) return '--:--';
+      const d = new Date(iso);
+      return d.getUTCDate().toString().padStart(2,'0') + ' ' + 
+             ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()] + 
+             ' ' + d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
+    }
+
+    function fmtTime(iso) {
+      if (!iso) return '--:--';
+      const d = new Date(iso);
+      return d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '--';
+      const d = new Date(iso);
+      return d.getUTCDate().toString().padStart(2,'0') + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()];
+    }
+
+    function fmtDuration(mins) {
+      if (!mins && mins !== 0) return '--';
+      return Math.floor(mins/60) + ':' + (mins%60).toString().padStart(2,'0') + 'h';
+    }
+
+    function csvDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return d.getUTCDate().toString().padStart(2,'0') + '/' + (d.getUTCMonth()+1).toString().padStart(2,'0') + '/' + d.getUTCFullYear();
+    }
+
+    function csvTime(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
+    }
+
+    function csvDateTime(iso) {
+      if (!iso) return '';
+      return csvDate(iso) + ' ' + csvTime(iso);
+    }
+
+    function fmtHoursDecimal(mins) {
+      if (!mins) return '0:00h';
+      return Math.floor(mins/60) + ':' + (mins%60).toString().padStart(2,'0') + 'h';
+    }
+
+    function avClass(pos) {
+      const p = (pos||'').toUpperCase();
+      if (p === 'CDB') return 'av-cdb';
+      if (p === 'OPL') return 'av-opl';
+      if (p.startsWith('CA')) return 'av-ca';
+      if (p === 'CC') return 'av-cc';
+      if (p === 'EP') return 'av-ep';
+      if (p === 'EF') return 'av-ef';
+      return 'av-other';
+    }
+
+    function ini(g, s) {
+      return (((g||'')[0]||'') + ((s||'')[0]||'')).toUpperCase();
+    }
+
+    // ── SMART CLASSIFICATION ENGINE (THE CORE PATCH) ────────────────────────
+    function classifyActivity(act) {
+      const subs = act.activities || [];
+      const typeStr = (act.type || '').toLowerCase();
+      const codeId = (act.activityCode?.id || '').toLowerCase();
+      const descStr = (act.activityCode?.description || '').toLowerCase();
+
+      // 1. Flight leg detection priority
+      if (subs.some(s => s.type === 'flight-leg' || s.type === 'flight') || typeStr.includes('flight') || typeStr.includes('leg')) {
+        return 'flight';
+      }
+
+      // 2. Training pattern-matching interception
+      const isTraining = typeStr.includes('train') || typeStr.includes('cours') || typeStr.includes('sim') || 
+                         codeId.includes('sim') || codeId.includes('trn') || codeId.includes('gnd') ||
+                         subs.some(s => s.type === 'ground-training' || s.trainingTags?.length > 0 || (s.activityCode?.id||'').toLowerCase().includes('sim'));
+      if (isTraining) {
+        return 'training';
+      }
+
+      // 3. Standby / Reserve pattern-matching interception
+      const isStandby = typeStr.includes('standby') || typeStr.includes('reserve') || typeStr.includes('sby') || typeStr.includes('res') ||
+                        codeId.includes('sby') || codeId.includes('res') || codeId.includes('stby') ||
+                        descStr.includes('standby') || descStr.includes('reserve');
+      if (isStandby) {
+        return 'standby';
+      }
+
+      // Default fallback layer for other standard duty operations
+      return 'other';
+    }
+
+    // ── PIN SECURITY SYSTEM ──────────────────────────────────────────────────
+    function pressKey(num) {
+      errorMsg.classList.add('hidden');
+      if (pinInput.value.length < 6) pinInput.value += num;
+    }
+    function pressDelete() {
+      errorMsg.classList.add('hidden');
+      pinInput.value = pinInput.value.slice(0, -1);
+    }
+    function pressClear() {
+      errorMsg.classList.add('hidden');
+      pinInput.value = '';
+    }
+
+    const CORRECT_PIN_HASH = "599d1db9da4631903b0c74ea64d598dead94905690b47ef7b03ed2c6a470de3c"; // Hash of "080425"
+
+    async function hashPin(pin) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pin);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function verifyPinCode() {
+      const entered = pinInput.value;
+      const enteredHash = await hashPin(entered);
+      if (enteredHash === CORRECT_PIN_HASH) {
+        errorMsg.classList.add('hidden');
+        pinOverlay.classList.add('hidden');
+        appContainer.style.display = 'block';
+        initializeRosterSync();
+      } else {
+        errorMsg.classList.remove('hidden');
+        pinInput.value = '';
+      }
+    }
+
+    // Input monitoring trigger for complete PIN submission
+    pinInput.addEventListener('input', () => {
+      if (pinInput.value.length === 6) verifyPinCode();
+    });
+
+    // ── ASYNC SYNC SCHEDULER DATA INGESTION ENGINE ──────────────────────────
+    async function initializeRosterSync() {
+      try {
+        const response = await fetch('roster.json');
+        if (response.ok) {
+          const data = await response.json();
+          const entity = data.entity || data;
+          (entity.activities || []).forEach(act => {
+            if (classifyActivity(act) === 'flight') {
+              knownFlightKeys.add(act.startTime + '|' + (act.startStation||'') + '|' + (act.endStation||''));
+            }
+          });
+          renderRoster(data);
+        } else {
+          showErrorState();
+        }
+      } catch {
+        showErrorState();
+      }
+    }
+
+    async function refreshRoster() {
+      const btn = document.getElementById('refreshBtn');
+      const icon = btn.querySelector('i');
+      icon.classList.add('spin');
+      btn.disabled = true;
+
+      allCards = [];
+      selectedIds.clear();
+      rosterData = null;
+      cardIdCounter = 0;
+      urgentTimers.forEach(clearInterval);
+      urgentTimers = [];
+
+      activityList.innerHTML = `
+        <div class="empty-state" id="loadingState">
+          <i class="ti ti-loader spin"></i>
+          <p>Re-establishing secure API interface sync...</p>
+        </div>`;
+
+      try {
+        const response = await fetch('roster.json');
+        if (response.ok) {
+          const data = await response.json();
+          setTimeout(() => {
+            icon.classList.remove('spin');
+            btn.disabled = false;
+            
+            // Highlight incoming structural modifications via toasts
+            const entity = data.entity || data;
+            let newFlightsCount = 0;
+            (entity.activities || []).forEach(act => {
+              if (classifyActivity(act) === 'flight') {
+                const key = act.startTime + '|' + (act.startStation||'') + '|' + (act.endStation||'');
+                if (!knownFlightKeys.has(key)) {
+                  newFlightsCount++;
+                  knownFlightKeys.add(key);
+                }
+              }
+            });
+
+            renderRoster(data);
+            if (newFlightsCount > 0) {
+              showToast("Roster Sync Complete", `Detected ${newFlightsCount} newly scheduled route segments.`);
+            } else {
+              showToast("Roster Up to Date", "No structural changes found inside profile layer arrays.");
+            }
+          }, 600);
+        } else {
+          showErrorState();
+        }
+      } catch {
+        showErrorState();
+      }
+    }
+
+    function showErrorState() {
+      const btn = document.getElementById('refreshBtn');
+      if (btn) btn.disabled = false;
+      activityList.innerHTML = `
+        <div class="empty-state">
+          <i class="ti ti-cloud-off"></i>
+          <p>Roster Synchronization Network Timeout</p>
+          <span>Verify roster.json path status inside root layout deployment.</span>
+        </div>`;
+    }
+
+    // ── TOAST NOTIFICATION SUB-ENGINE ────────────────────────────────────────
+    function showToast(title, msg) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `
+        <div class="toast-icon"><i class="ti ti-circle-check"></i></div>
+        <div class="toast-body">
+          <div class="toast-title">${title}</div>
+          <div class="toast-msg">${msg}</div>
+          <div class="toast-time">Just now · System Event</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()"><i class="ti ti-x"></i></button>
+        <div class="toast-progress"></div>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('hide');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // ── RENDER CORE MODULE ───────────────────────────────────────────────────
+    function renderRoster(data) {
+      rosterData = data;
+      document.getElementById('icalBtn').classList.remove('hidden');
       const entity = data.entity || data;
-      (entity.activities || []).forEach(act => {
-        if (classifyActivity(act) === 'flight') {
-          knownFlightKeys.add(act.startTime + '|' + (act.startStation||'') + '|' + (act.endStation||''));
+      const activities = entity.activities || [];
+      const crewId = entity.crewId || '';
+
+      document.getElementById('crewLabel').textContent = crewId ? 'Crew ID: ' + crewId + ' · ' + activities.length + ' roster events' : activities.length + ' activities loaded';
+      document.getElementById('statsGrid').classList.remove('hidden');
+      document.getElementById('filterBar').classList.remove('hidden');
+
+      allCards = [];
+      const uniqueMonths = new Set();
+      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+      activities.forEach(act => {
+        const type = classifyActivity(act);
+        const actDate = new Date(act.startTime);
+        const monthKey = actDate.getUTCFullYear() + '-' + (actDate.getUTCMonth()+1).toString().padStart(2,'0');
+        const monthLabel = monthNames[actDate.getUTCMonth()] + ' ' + actDate.getUTCFullYear();
+
+        uniqueMonths.add(JSON.stringify({key: monthKey, label: monthLabel}));
+
+        const subs = act.activities || [];
+        const flightLegs = subs.filter(s => s.type === 'flight-leg');
+        const role = act.key?.role || '';
+
+        const blockMins = flightLegs.reduce((acc, l) => acc + (l.blockTimeMinutes || l.durationMinutes || 0), 0);
+        let routeText = (act.startStation || 'Duty') + (act.endStation ? ' → ' + act.endStation : '');
+
+        if (flightLegs.length > 0) {
+          const stops = [...new Set(flightLegs.map(l => l.startStation))];
+          stops.push(flightLegs[flightLegs.length-1].endStation);
+          routeText = stops.join(' → ');
+        } else if (act.activityCode?.id) {
+          routeText = act.activityCode.id + (act.activityCode.description ? ' · ' + act.activityCode.description : '');
+        }
+
+        const SKIP = new Set(['briefing', 'debriefing']);
+        let timelineHTML = '<div class="section-label">Timeline Array Tracks</div><div class="timeline">';
+        
+        if (subs.length === 0) {
+          timelineHTML += `
+            <div class="tl-row ${type === 'standby' ? 'layover-row' : 'gt-row'}">
+              <div class="tl-type">${act.activityCode?.id || 'DUTY'}</div>
+              <div>
+                <div class="tl-label">${act.activityCode?.description || 'Operational Assignment Block'}</div>
+                <div class="tl-sublabel">Duration: ${fmtDuration(act.durationMinutes)}</div>
+              </div>
+              <div class="tl-time">${fmtTime(act.startTime)}<br>${fmtTime(act.endTime)}</div>
+            </div>`;
+        } else {
+          subs.filter(s => !SKIP.has(s.type)).forEach(s => {
+            const st = fmtDateTime(s.startTime);
+            const et = fmtDateTime(s.endTime);
+            const dur = fmtDuration(s.durationMinutes);
+
+            if (s.type === 'flight-leg') {
+              const fn = (s.carrier||'') + (s.flightNumber||s.activityCode?.id||'');
+              const reg = s.aircraftRegistration ? ' (' + s.aircraftRegistration + ')' : '';
+              const acType = s.aircraftType ? s.aircraftType + reg : '';
+
+              timelineHTML += `
+                <div class="tl-row flight-row">
+                  <div class="tl-type"><span class="fn-tag">${fn}</span><br><span class="tl-date">${acType}</span></div>
+                  <div>
+                    <div class="tl-label">${s.startStation} → ${s.endStation}</div>
+                    <div class="sched-line">Block: ${fmtDuration(s.blockTimeMinutes || s.durationMinutes)}</div>
+                    ${buildCrewHTML(s.assignedCrew, s.trainingTags)}
+                  </div>
+                  <div class="tl-time">${st}<br>${et}</div>
+                </div>`;
+            } else if (s.type === 'layover') {
+              timelineHTML += `
+                <div class="tl-row layover-row">
+                  <div class="tl-type tl-type--layover"><i class="ti ti-moon"></i> LAYOVER</div>
+                  <div>
+                    <div class="tl-label">${s.startStation} Rest Facility</div>
+                    <div class="tl-sublabel">Duration: ${dur}</div>
+                  </div>
+                  <div class="tl-time">${st}<br>${et}</div>
+                </div>`;
+            } else {
+              const code = s.activityCode?.id || s.type;
+              const desc = s.activityCode?.description || 'Ground Segment';
+              timelineHTML += `
+                <div class="tl-row gt-row">
+                  <div class="tl-type tl-type--ground">${code.toUpperCase()}</div>
+                  <div>
+                    <div class="tl-label">${desc}</div>
+                    <div class="tl-sublabel">Duration: ${dur}</div>
+                    ${buildCrewHTML(s.assignedCrew, s.trainingTags)}
+                  </div>
+                  <div class="tl-time">${st}<br>${et}</div>
+                </div>`;
+            }
+          });
+        }
+        timelineHTML += '</div>';
+
+        const badgeClass = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' }[type];
+        const badgeLabel = { flight:'Flight', standby:'Reserve', training:'Training', other:'Duty' }[type];
+
+        const cardId = ++cardIdCounter;
+        const card = document.createElement('div');
+        card.className = 'activity-card';
+        card.dataset.type = type;
+        card.dataset.month = monthKey;
+        card.dataset.id = cardId;
+
+        // 24-Hour Urgent Flight Pre-computation Trigger Array
+        const now = Date.now();
+        const depMs = new Date(act.startTime).getTime();
+        const msUntil = depMs - now;
+        const isUrgent = type === 'flight' && msUntil > 0 && msUntil < 86400000;
+
+        if (isUrgent) card.classList.add('urgent-flight');
+
+        function fmtCountdown(ms) {
+          const totalSec = Math.max(0, Math.floor(ms / 1000));
+          const h = Math.floor(totalSec / 3600);
+          const m = Math.floor((totalSec % 3600) / 60);
+          return h + 'h ' + m.toString().padStart(2,'0') + 'm';
+        }
+
+        const urgentBadgeHTML = isUrgent ? `<span class="urgent-badge"><i class="ti ti-clock-exclamation"></i> &lt;24H</span> <span class="urgent-countdown" id="countdown-${cardId}">${fmtCountdown(msUntil)}</span>` : '';
+
+        card.innerHTML = `
+          <div class="card-header" onclick="toggleCard(this.nextElementSibling, this.querySelector('.card-chevron'))">
+            <div class="card-select-cb" onclick="toggleSelect(event, ${cardId})">
+              <i class="ti ti-check"></i>
+            </div>
+            <span class="type-badge ${badgeClass}">${badgeLabel}</span>
+            <span class="card-date">${fmtDate(act.startTime)}</span>
+            <div class="card-route">
+              ${routeText}
+              ${role ? `<span class="card-role"> · ${role}</span>` : ''}
+            </div>
+            ${urgentBadgeHTML}
+            <div class="card-time">${fmtTime(act.startTime)}<br>${fmtTime(act.endTime)}</div>
+            <i class="ti ti-chevron-down card-chevron"></i>
+          </div>
+          <div class="card-body">
+            <div class="detail-grid">
+              <div class="detail-item"><label>Report Time (UTC)</label><span>${fmtDateTime(act.startTime)}</span></div>
+              <div class="detail-item"><label>Release Time (UTC)</label><span>${fmtDateTime(act.endTime)}</span></div>
+              <div class="detail-item"><label>Total Duration</label><span>${fmtDuration(act.durationMinutes)}</span></div>
+            </div>
+            ${timelineHTML}
+          </div>`;
+
+        if (isUrgent) {
+          const timer = setInterval(() => {
+            const currentMs = new Date(act.startTime).getTime() - Date.now();
+            const el = document.getElementById(`countdown-${cardId}`);
+            if (currentMs <= 0) {
+              clearInterval(timer);
+              if (el) el.textContent = "Departed";
+            } else {
+              if (el) el.textContent = fmtCountdown(currentMs);
+            }
+          }, 60000);
+          urgentTimers.push(timer);
+        }
+
+        allCards.push({
+          el: card,
+          act,
+          type,
+          month: monthKey,
+          durationMinutes: act.durationMinutes || 0,
+          blockMinutes: blockMins
+        });
+      });
+
+      const sortedMonths = Array.from(uniqueMonths).map(m => JSON.parse(m)).sort((a,b) => a.key.localeCompare(b.key));
+      monthSelect.innerHTML = '<option value="all">All Months</option>';
+      sortedMonths.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.key;
+        opt.textContent = m.label;
+        monthSelect.appendChild(opt);
+      });
+
+      renderFiltered();
+    }
+
+    function buildCrewHTML(crewArray, trnTags) {
+      if (!crewArray || !crewArray.length) return '';
+      let html = '<div class="crew-grid">';
+      crewArray.forEach(c => {
+        const pos = (c.position?.id || c.position || '').toUpperCase();
+        const name = c.givenNames + ' ' + c.surname;
+        const cl = avClass(pos);
+        const initials = ini(c.givenNames, c.surname);
+
+        let trnMarker = '';
+        if (trnTags && trnTags.length) {
+          const matchingTag = trnTags.find(t => t.crewId === c.crewId);
+          if (matchingTag) {
+            trnMarker = `<span class="trn-badge trn-${matchingTag.type}">${matchingTag.type}</span>`;
+          }
+        }
+
+        html += `
+          <div class="crew-pill">
+            <div class="crew-avatar ${cl}">${initials}</div>
+            <div class="crew-name">${name}${trnMarker}<br><span class="crew-meta">${pos} · ${c.crewId || 'ID Pending'}</span></div>
+          </div>`;
+      });
+      return html + '</div>';
+    }
+
+    function toggleCard(body, chevron) {
+      body.classList.toggle('open');
+      chevron.classList.toggle('open');
+    }
+
+    // ── DYNAMIC SELECTION BAR SYSTEMS ────────────────────────────────────────
+    function toggleSelect(event, id) {
+      event.stopPropagation();
+      const cardObj = allCards.find(c => c.el.dataset.id == id);
+      if (!cardObj) return;
+
+      if (selectedIds.has(id)) {
+        selectedIds.delete(id);
+        cardObj.el.classList.remove('selected');
+      } else {
+        selectedIds.add(id);
+        cardObj.el.classList.add('selected');
+      }
+      updateSelectionBar();
+    }
+
+    function updateSelectionBar() {
+      if (selectedIds.size > 0 && currentView === 'list') {
+        document.getElementById('selCountLabel').textContent = selectedIds.size;
+        selectionBar.classList.remove('invisible');
+      } else {
+        selectionBar.classList.add('invisible');
+      }
+    }
+
+    function clearSelection() {
+      selectedIds.forEach(id => {
+        const card = allCards.find(c => c.el.dataset.id == id);
+        if (card) card.el.classList.remove('selected');
+      });
+      selectedIds.clear();
+      updateSelectionBar();
+    }
+
+    function getSelectedCards() {
+      return allCards.filter(c => selectedIds.has(+c.el.dataset.id));
+    }
+
+    // ── RENDER FILTERED MATRIX LAYOUT ────────────────────────────────────────
+    function renderFiltered() {
+      activityList.innerHTML = '';
+      const visible = allCards.filter(c => {
+        const matchType = (currentFilter === 'all' || c.type === currentFilter);
+        const matchMonth = (currentMonthFilter === 'all' || c.month === currentMonthFilter);
+        return matchType && matchMonth;
+      });
+
+      if (!visible.length) {
+        activityList.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i><p>No activities match this filter layer</p></div>';
+        totalsBar.classList.add('hidden');
+      } else {
+        visible.forEach(c => activityList.appendChild(c.el));
+        updateTotals(visible);
+        if (currentView === 'list') totalsBar.classList.remove('hidden');
+      }
+      updateStats(allCards.filter(c => currentMonthFilter === 'all' || c.month === currentMonthFilter));
+    }
+
+    function updateStats(visible) {
+      const fc = visible.filter(c => c.type === 'flight').length;
+      const dc = visible.filter(c => c.type === 'other').length;
+      const sc = visible.filter(c => c.type === 'standby').length;
+      const tc = visible.filter(c => c.type === 'training').length;
+
+      document.getElementById('statFlights').textContent = fc;
+      document.getElementById('statDuties').textContent = dc;
+      document.getElementById('statStandby').textContent = sc;
+      document.getElementById('statTraining').textContent = tc;
+    }
+
+    function updateTotals(visible) {
+      const totalDutyMins = visible.reduce((a,c) => a + c.durationMinutes, 0);
+      const totalBlockMins = visible.reduce((a,c) => a + c.blockMinutes, 0);
+      const totalFlights = visible.filter(c => c.type === 'flight').length;
+
+      document.getElementById('totHours').textContent = fmtHoursDecimal(totalBlockMins);
+      document.getElementById('totDuty').textContent = fmtHoursDecimal(totalDutyMins);
+      document.getElementById('totFlights').textContent = totalFlights;
+    }
+
+    // ── iCAL OPERATIONS ENGINE ───────────────────────────────────────────────
+    function exportIcal() {
+      if (!rosterData) return;
+      const entity = rosterData.entity || rosterData;
+      _doExportIcal(entity.activities || [], entity.crewId || 'CREW');
+    }
+
+    function exportSelectedIcal() {
+      if (!rosterData) return;
+      const entity = rosterData.entity || rosterData;
+      const selActs = getSelectedCards().map(c => c.act);
+      if (!selActs.length) return;
+      _doExportIcal(selActs, entity.crewId || 'CREW', '_selected');
+    }
+
+    function _doExportIcal(activities, crewId, suffix = '') {
+      function icsDate(iso) {
+        if (!iso) return null;
+        const d = new Date(iso);
+        const pad = n => n.toString().padStart(2,'0');
+        return d.getUTCFullYear() + pad(d.getUTCMonth()+1) + pad(d.getUTCDate()) + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + '00Z';
+      }
+
+      function fold(line) {
+        const out = [];
+        while (line.length > 75) {
+          out.push(line.slice(0,75));
+          line = ' ' + line.slice(75);
+        }
+        out.push(line);
+        return out.join('\r\n');
+      }
+
+      function icsEscape(str) {
+        return (str||').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+      }
+
+      const now = icsDate(new Date().toISOString());
+      let cal = [
+        'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RAM Roster Viewer//EN',
+        'CALSCALE:GREGORIAN','METHOD:PUBLISH',
+        fold('X-WR-CALNAME:RAM Roster – ' + crewId),'X-WR-TIMEZONE:UTC'
+      ];
+
+      activities.forEach(act => {
+        const type = classifyActivity(act);
+        const dtstart = icsDate(act.startTime);
+        const dtend = icsDate(act.endTime);
+        if (!dtstart || !dtend) return;
+
+        const subs = act.activities || [];
+        const flightLegs = subs.filter(s => s.type === 'flight-leg');
+        const role = act.key?.role ? ' [' + act.key.role + ']' : '';
+
+        let summary = 'Duty Assignment';
+        let location = act.startStation || '';
+
+        if (type === 'flight') {
+          const fnList = flightLegs.map(l => (l.carrier||'') + (l.flightNumber||'')).join('/');
+          const rt = flightLegs.map(l => l.startStation).join('-') + '-' + (flightLegs[flightLegs.length-1]?.endStation || '');
+          summary = (fnList ? fnList + ' (' + rt + ')' : 'Flight Duty') + role;
+          location = rt;
+        } else if (type === 'standby') {
+          summary = 'Reserve Duty' + role;
+        } else if (type === 'training') {
+          summary = (act.activityCode?.id || 'Training') + ' · ' + (act.activityCode?.description || 'Ground Session') + role;
+        } else if (act.activityCode?.id) {
+          summary = act.activityCode.id + ' · ' + (act.activityCode.description || 'Duty') + role;
+        }
+
+        const uid = 'act-' + act.startTime + '-' + (act.activityCode?.id || 'duty') + '-' + Math.random().toString(36).slice(2,7) + '@ram.roster';
+        let descParts = ['Type: ' + type.toUpperCase(), 'Duration: ' + fmtDuration(act.durationMinutes)];
+
+        if (type === 'flight' || type === 'training') {
+          const crewMap = new Map();
+          const collectCrew = (source) => {
+            (source.assignedCrew || []).forEach(c => {
+              const pos = (c.position?.id || c.position || '').toUpperCase();
+              if (pos === 'CDB' || pos === 'OPL') {
+                const key = c.crewId || (c.givenNames + c.surname);
+                if (!crewMap.has(key)) crewMap.set(key, { ...c, position: pos });
+              }
+            });
+          };
+          collectCrew(act);
+          subs.forEach(s => {
+            collectCrew(s);
+            (s.activities || []).forEach(ss => collectCrew(ss));
+          });
+          [...crewMap.values()].forEach(c => {
+            descParts.push(c.position + ': ' + c.givenNames + ' ' + c.surname + ' (' + c.crewId + ')');
+          });
+        }
+
+        cal.push('BEGIN:VEVENT');
+        cal.push(fold('UID:' + icsEscape(uid)));
+        cal.push('DTSTAMP:' + now);
+        cal.push('DTSTART:' + dtstart);
+        cal.push('DTEND:' + dtend);
+        cal.push(fold('SUMMARY:' + icsEscape(summary)));
+        if (location) cal.push(fold('LOCATION:' + icsEscape(location)));
+        if (descParts.length) cal.push(fold('DESCRIPTION:' + icsEscape(descParts.join('\n'))));
+        cal.push('END:VEVENT');
+      });
+
+      cal.push('END:VCALENDAR');
+      downloadBlob(cal.join('\r\n'), 'text/calendar;charset=utf-8', 'ram_roster_' + crewId + suffix + '.ics');
+    }
+
+    // ── CSV EXPORT SYSTEM ────────────────────────────────────────────────────
+    function exportSelectedCsv() {
+      if (!rosterData) return;
+      const entity = rosterData.entity || rosterData;
+      const crewId = entity.crewId || 'CREW';
+      const cards = getSelectedCards();
+      if (!cards.length) return;
+
+      const csvEsc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
+      const rows = [
+        ['Date','Flight/Duty Number','From','To','Sched Dep','Sched Arr','Entry Type','Aircraft','Registration','Block Time','Duty Time']
+      ];
+
+      cards.forEach(c => {
+        const act = c.act;
+        const subs = act.activities || [];
+        const legs = subs.filter(s => s.type === 'flight-leg');
+
+        if (legs.length > 0) {
+          legs.forEach(l => {
+            const fn = (l.carrier||'') + (l.flightNumber||'');
+            rows.push([
+              csvDate(l.startTime),
+              fn,
+              l.startStation || '',
+              l.endStation || '',
+              csvTime(l.startTime),
+              csvTime(l.endTime),
+              'Flight',
+              l.aircraftType || '',
+              l.aircraftRegistration || '',
+              fmtHoursDecimal(l.blockTimeMinutes || l.durationMinutes),
+              fmtHoursDecimal(l.durationMinutes)
+            ]);
+          });
+        } else {
+          rows.push([
+            csvDate(act.startTime),
+            act.activityCode?.id || 'DUTY',
+            act.startStation || '',
+            act.endStation || '',
+            csvTime(act.startTime),
+            csvTime(act.endTime),
+            c.type.toUpperCase(),
+            '',
+            '',
+            '0:00h',
+            fmtHoursDecimal(act.durationMinutes)
+          ]);
         }
       });
-      renderRoster(data);
-    }
-    else showErrorState();
-  } catch { showErrorState(); }
-}
-async function refreshRoster() {
-  const btn = document.getElementById('refreshBtn');
-  const icon = btn.querySelector('i');
-  icon.classList.add('spin');
-  btn.disabled = true;
-  allCards = [];
-  selectedIds.clear();
-  rosterData = null;
-  cardIdCounter = 0;
-  urgentTimers.forEach(clearInterval);
-  urgentTimers = [];
-  currentFilter = 'all';
-  currentMonthFilter = 'all';
-  document.getElementById('statsGrid').classList.add('hidden');
-  document.getElementById('filterBar').classList.add('hidden');
-  document.getElementById('icalBtn').classList.add('hidden');
-  totalsBar.classList.add('hidden');
-  activityList.innerHTML = '<div class="empty-state"><i class="ti ti-loader spin"></i><p>Synchronizing Live Roster File</p><span>Pulling background data layers...</span></div>';
-  try {
-    const response = await fetch('roster.json?t=' + Date.now());
-    if (response.ok) { renderRoster(await response.json()); }
-    else showErrorState();
-  } catch { showErrorState(); }
-  icon.classList.remove('spin');
-  btn.disabled = false;
-}
-function showErrorState() {
-  document.getElementById('crewLabel').textContent = "Sync pending";
-  activityList.innerHTML = `
-    <div class="empty-state">
-      <i class="ti ti-cloud-exclamation"></i>
-      <p>Roster File Not Found Yet</p>
-      <span>Your PIN is correct! However, your roster.json data layer is missing. Please check your GitHub Action workflow runs.</span>
-    </div>`;
-}
 
-// ── FORMATTERS ─────────────────────────────────────────────────────────────
-function fmtTime(iso) {
-  if (!iso) return '--';
-  const d = new Date(iso);
-  return d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
-}
-function fmtDateTime(iso) {
-  if (!iso) return '--';
-  const d = new Date(iso);
-  const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return d.getUTCDate().toString().padStart(2,'0') + ' ' + M[d.getUTCMonth()] + ' '
-       + d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
-}
-function fmtDate(iso) {
-  if (!iso) return '--';
-  const d = new Date(iso);
-  const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return d.getUTCDate().toString().padStart(2,'0') + ' ' + M[d.getUTCMonth()];
-}
-function fmtDuration(mins) {
-  if (!mins && mins !== 0) return '--';
-  return Math.floor(mins/60) + ':' + (mins%60).toString().padStart(2,'0') + 'h';
-}
-// CSV-specific formatters: dd/mm/yyyy and HH:mm
-function csvDate(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return d.getUTCDate().toString().padStart(2,'0') + '/'
-       + (d.getUTCMonth()+1).toString().padStart(2,'0') + '/'
-       + d.getUTCFullYear();
-}
-function csvTime(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
-}
-function csvDateTime(iso) {
-  if (!iso) return '';
-  return csvDate(iso) + ' ' + csvTime(iso);
-}
-function fmtHoursDecimal(mins) {
-  if (!mins) return '0:00h';
-  return Math.floor(mins/60) + ':' + (mins%60).toString().padStart(2,'0') + 'h';
-}
-
-// ── HELPERS ────────────────────────────────────────────────────────────────
-function avClass(pos) {
-  const p = (pos||'').toUpperCase();
-  if (p === 'CDB') return 'av-cdb';
-  if (p === 'OPL') return 'av-opl';
-  if (p.startsWith('CA')) return 'av-ca';
-  if (p === 'CC') return 'av-cc';
-  if (p === 'EP') return 'av-ep';
-  if (p === 'EF') return 'av-ef';
-  return 'av-other';
-}
-function ini(g, s) { return (((g||'')[0]||'') + ((s||'')[0]||'')).toUpperCase(); }
-
-function classifyActivity(act) {
-  const subs = act.activities || [];
-  if (subs.some(s => s.type === 'flight-leg')) return 'flight';
-  if (subs.some(s => s.isStandby)) return 'standby';
-  if (subs.some(s => s.isTraining || s.activityCode?.group === 'SIM' || s.activityCode?.group === 'GTR')) return 'training';
-  return 'other';
-}
-
-// Entry type for CSV: flight, simulator, deadhead, reserve
-function entryType(act, type) {
-  const subs = act.activities || [];
-  if (subs.some(s => s.activityCode?.group === 'SIM')) return 'Simulator';
-  if (subs.some(s => s.activityCode?.group === 'DH' || (s.activityCode?.id||'').toUpperCase().includes('DH'))) return 'Deadhead';
-  if (type === 'standby') return 'Reserve';
-  if (type === 'flight') return 'Flight';
-  if (type === 'training') return 'Simulator';
-  return 'Other';
-}
-
-function buildCrewHTML(crew, trainingTags) {
-  if (!crew || !crew.length) return '';
-  const trnMap = {};
-  (trainingTags||[]).forEach(t => (t.crewIds||[]).forEach(id => { trnMap[id] = t.id; }));
-  let html = '<div class="crew-grid">';
-  crew.forEach(c => {
-    const trn = trnMap[c.crewId];
-    const badge = trn ? `<span class="trn-badge trn-${trn}">${trn}</span>` : '';
-    const sen = c.seniority ? ` · ${c.seniority}` : '';
-    html += `<div class="crew-pill">
-      <div class="crew-avatar ${avClass(c.position)}">${ini(c.givenNames, c.surname)}</div>
-      <div>
-        <div class="crew-name">${c.givenNames} ${c.surname}${badge}</div>
-        <div class="crew-meta">${c.position} · ${c.crewId}${sen}</div>
-      </div>
-    </div>`;
-  });
-  return html + '</div>';
-}
-
-// ── RENDER ROSTER ──────────────────────────────────────────────────────────
-function renderRoster(data) {
-  rosterData = data;
-  document.getElementById('icalBtn').classList.remove('hidden');
-  const entity     = data.entity || data;
-  const activities = entity.activities || [];
-  const crewId     = entity.crewId || '';
-
-  document.getElementById('crewLabel').textContent = crewId
-    ? 'Crew ID: ' + crewId + ' · ' + activities.length + ' activities'
-    : activities.length + ' activities loaded';
-  document.getElementById('statsGrid').classList.remove('hidden');
-  document.getElementById('filterBar').classList.remove('hidden');
-
-  allCards = [];
-  const uniqueMonths = new Set();
-  const monthNames   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-  activities.forEach(act => {
-    const type      = classifyActivity(act);
-    const actDate   = new Date(act.startTime);
-    const monthKey  = actDate.getUTCFullYear() + '-' + (actDate.getUTCMonth()+1).toString().padStart(2,'0');
-    const monthLabel= monthNames[actDate.getUTCMonth()] + ' ' + actDate.getUTCFullYear();
-    uniqueMonths.add(JSON.stringify({key: monthKey, label: monthLabel}));
-
-    const subs       = act.activities || [];
-    const flightLegs = subs.filter(s => s.type === 'flight-leg');
-    const role       = act.key?.role || '';
-    const keyName    = act.key?.name || '';
-
-    // Block time = sum of all flight-leg blockTimeMinutes (or durationMinutes fallback)
-    const blockMins  = flightLegs.reduce((acc, l) => acc + (l.blockTimeMinutes || l.durationMinutes || 0), 0);
-
-    let routeText = act.startStation + ' → ' + act.endStation;
-    if (flightLegs.length > 1) {
-      const stops = [...new Set(flightLegs.map(l => l.startStation))];
-      stops.push(flightLegs[flightLegs.length-1].endStation);
-      routeText = stops.join(' → ');
+      const csvContent = rows.map(r => r.map(csvEsc).join(',')).join('\r\n');
+      downloadBlob(csvContent, 'text/csv;charset=utf-8', 'ram_roster_' + crewId + '_export.csv');
     }
 
-    const SKIP = new Set(['briefing', 'debriefing']);
-    let timelineHTML = '<div class="section-label">Timeline</div><div class="timeline">';
+    function downloadBlob(content, mime, filename) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1000);
+    }
 
-    subs.filter(s => !SKIP.has(s.type)).forEach(s => {
-      const st  = fmtDateTime(s.startTime);
-      const et  = fmtDateTime(s.endTime);
-      const dur = fmtDuration(s.durationMinutes);
+    // ── CALENDAR GENERATION SUB-ENGINE ───────────────────────────────────────
+    let currentView = 'list';
+    let calYear = new Date().getUTCFullYear();
+    let calMonth = new Date().getUTCMonth();
+    let calSelectedDay = null;
 
-      if (s.type === 'flight-leg') {
-        const fn      = (s.carrier||'') + (s.flightNumber||s.activityCode?.id||'');
-        const schSt   = s.scheduledStartTime ? fmtTime(s.scheduledStartTime) : null;
-        const schEt   = s.scheduledEndTime   ? fmtTime(s.scheduledEndTime)   : null;
-        const actSt   = fmtTime(s.startTime);
-        const actEt   = fmtTime(s.endTime);
-        const status  = s.statusLabel || '';
-        const isLate  = status.includes('+');
-        const delayBadge = status ? `<span class="delay-tag ${isLate?'late':''}">${status}</span>` : '';
-        const schedLine  = schSt ? `<div class="sched-line">Sched: ${schSt} – ${schEt}</div>` : '';
-        const trnTags    = (s.trainingTags||[]).map(t => t.descr).join(', ');
-        timelineHTML += `<div class="tl-row flight-row">
-          <div class="tl-type"><span class="fn-tag">${fn}</span>${delayBadge}<br><span class="tl-date">${fmtDate(s.startTime)}</span></div>
-          <div>
-            <div class="tl-label">${s.startStation} → ${s.endStation}</div>
-            <div class="tl-sublabel">${s.role?.id||role} · ${s.aircraftType||''} ${s.tail ? '· '+s.tail : ''} · Block ${fmtDuration(s.blockTimeMinutes||s.durationMinutes)}</div>
-            ${schedLine}
-            ${buildCrewHTML(s.assignedCrew, s.trainingTags)}
-          </div>
-          <div class="tl-time">${actSt}<br>${actEt}</div>
-        </div>`;
+    function setView(view) {
+      currentView = view;
+      document.getElementById('btnListView').classList.toggle('active', view === 'list');
+      document.getElementById('btnCalView').classList.toggle('active', view === 'calendar');
+      document.getElementById('activityList').classList.toggle('hidden', view === 'calendar');
+      document.getElementById('calendarView').classList.toggle('hidden', view !== 'calendar');
+      totalsBar.classList.toggle('hidden', view === 'calendar');
+      selectionBar.classList.add('invisible');
 
-      } else if (s.type === 'layover') {
-        timelineHTML += `<div class="tl-row layover-row">
-          <div class="tl-type tl-type--layover">Layover</div>
-          <div><div class="tl-label">${s.startStation} · ${dur}</div></div>
-          <div class="tl-time">${st}<br>${et}</div>
-        </div>`;
-
-      } else if (s.type === 'ground-task' || s.type === 'ground-transport') {
-        const code = s.activityCode?.id || s.type;
-        const desc = s.activityCode?.description || '';
-        timelineHTML += `<div class="tl-row gt-row">
-          <div class="tl-type tl-type--ground">${code}</div>
-          <div>
-            <div class="tl-label">${s.startStation}${s.endStation !== s.startStation ? ' → '+s.endStation : ''}</div>
-            ${desc ? '<div class="tl-sublabel">'+desc+' · '+dur+'</div>' : ''}
-            ${buildCrewHTML(s.assignedCrew, s.trainingTags)}
-          </div>
-          <div class="tl-time">${st}<br>${et}</div>
-        </div>`;
+      if (view === 'calendar') {
+        if (allCards.length) {
+          const firstMonth = allCards.reduce((min, c) => c.month < min ? c.month : min, allCards[0].month);
+          const [y, m] = firstMonth.split('-').map(Number);
+          calYear = y;
+          calMonth = m - 1;
+        }
+        calSelectedDay = null;
+        renderCalendar();
       }
-    });
-    timelineHTML += '</div>';
-
-    const trnTags    = [...new Set(subs.flatMap(s => (s.trainingTags||[]).map(t => t.descr)))].filter(Boolean);
-    const badgeClass = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' }[type];
-    const badgeLabel = { flight:'Flight', standby:'Reserve', training:'Training', other:'Duty' }[type];
-
-    const cardId = ++cardIdCounter;
-    const card   = document.createElement('div');
-    card.className    = 'activity-card';
-    card.dataset.type = type;
-    card.dataset.month= monthKey;
-    card.dataset.id   = cardId;
-
-    // ── Urgent: departs within 24 hours ──────────────────────────────────
-    const now = Date.now();
-    const depMs = new Date(act.startTime).getTime();
-    const msUntil = depMs - now;
-    const isUrgent = type === 'flight' && msUntil > 0 && msUntil < 86400000;
-
-    // unique key for new-flight detection
-    const flightKey = act.startTime + '|' + (act.startStation||'') + '|' + (act.endStation||'');
-    const isNew = type === 'flight' && !knownFlightKeys.has(flightKey) && knownFlightKeys.size > 0;
-    if (type === 'flight') knownFlightKeys.add(flightKey);
-
-    if (isUrgent) card.classList.add('urgent-flight');
-
-    function fmtCountdown(ms) {
-      const totalSec = Math.max(0, Math.floor(ms / 1000));
-      const h = Math.floor(totalSec / 3600);
-      const m = Math.floor((totalSec % 3600) / 60);
-      return h + 'h ' + m.toString().padStart(2,'0') + 'm';
     }
 
-    const urgentBadgeHTML = isUrgent
-      ? `<span class="urgent-badge"><i class="ti ti-clock-exclamation"></i> &lt;24H</span>
-         <span class="urgent-countdown" id="countdown-${cardId}">${fmtCountdown(msUntil)}</span>`
-      : '';
-
-    card.innerHTML = `
-      <div class="card-header" onclick="toggleCard(this.nextElementSibling, this.querySelector('.card-chevron'))">
-        <div class="card-select-cb" onclick="toggleSelect(event, ${cardId})">
-          <i class="ti ti-check"></i>
-        </div>
-        <span class="type-badge ${badgeClass}">${badgeLabel}</span>
-        ${urgentBadgeHTML}
-        <span class="card-date">${fmtDate(act.startTime)}</span>
-        <span class="card-route">${routeText}<span class="card-role"> · ${role}</span></span>
-        <span class="card-time">${fmtTime(act.startTime)} – ${fmtTime(act.endTime)}</span>
-        <i class="ti ti-chevron-down card-chevron"></i>
-      </div>
-      <div class="card-body">
-        <div class="detail-grid">
-          <div class="detail-item"><label>Duration</label><span>${fmtDuration(act.durationMinutes)}</span></div>
-          <div class="detail-item"><label>Start</label><span>${fmtDateTime(act.startTime)}</span></div>
-          <div class="detail-item"><label>End</label><span>${fmtDateTime(act.endTime)}</span></div>
-        </div>
-        ${timelineHTML}
-      </div>`;
-
-    // Live countdown ticker for urgent flights
-    if (isUrgent) {
-      const tid = setInterval(() => {
-        const el = document.getElementById('countdown-' + cardId);
-        if (!el) { clearInterval(tid); return; }
-        const remaining = new Date(act.startTime).getTime() - Date.now();
-        if (remaining <= 0) { el.textContent = 'Departing now'; clearInterval(tid); return; }
-        el.textContent = fmtCountdown(remaining);
-      }, 30000);
-      urgentTimers.push(tid);
+    function calNav(dir) {
+      calMonth += dir;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      calSelectedDay = null;
+      renderCalendar();
     }
 
-    // Show toast for newly added flights
-    if (isNew) {
-      const depIn = msUntil > 0 && msUntil < 86400000
-        ? 'Departs in ' + fmtCountdown(msUntil)
-        : 'Departs ' + fmtDate(act.startTime) + ' at ' + fmtTime(act.startTime);
-      showToast(
-        'New Flight Added',
-        routeText + (role ? '  ·  ' + role : ''),
-        depIn
-      );
-    }
+    function renderCalendar() {
+      const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const ICONS = { flight: 'ti-plane', standby: 'ti-clock', training: 'ti-school', other: 'ti-briefcase' };
 
-    allCards.push({ el: card, act, type, month: monthKey, durationMinutes: act.durationMinutes || 0, blockMinutes: blockMins });
-  });
+      document.getElementById('calMonthLabel').textContent = MONTHS[calMonth] + ' ' + calYear;
+      const grid = document.getElementById('calGrid');
+      grid.innerHTML = '';
 
-  const sortedMonths = Array.from(uniqueMonths).map(m => JSON.parse(m)).sort((a,b) => a.key.localeCompare(b.key));
-  monthSelect.innerHTML = '<option value="all">All Months</option>';
-  sortedMonths.forEach(m => {
-    const opt = document.createElement('option');
-    opt.value = m.key; opt.textContent = m.label;
-    monthSelect.appendChild(opt);
-  });
+      const firstDay = new Date(Date.UTC(calYear, calMonth, 1)).getUTCDay();
+      const numDays = new Date(Date.UTC(calYear, calMonth + 1, 0)).getUTCDate();
 
-  renderFiltered();
-}
-
-// ── RENDER FILTERED ────────────────────────────────────────────────────────
-function renderFiltered() {
-  activityList.innerHTML = '';
-  const visible = allCards.filter(c => {
-    const matchType  = (currentFilter === 'all' || c.type === currentFilter);
-    const matchMonth = (currentMonthFilter === 'all' || c.month === currentMonthFilter);
-    return matchType && matchMonth;
-  });
-
-  if (!visible.length) {
-    activityList.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i><p>No activities match this filter</p></div>';
-    totalsBar.classList.add('hidden');
-  } else {
-    visible.forEach(c => activityList.appendChild(c.el));
-    updateTotals(visible);
-    totalsBar.classList.remove('hidden');
-  }
-  updateStats(visible);
-}
-
-// ── STATS (filter-aware) ───────────────────────────────────────────────────
-function updateStats(visible) {
-  const fc = visible.filter(c => c.type === 'flight').length;
-  const dc = visible.filter(c => c.type === 'other').length;
-  const sc = visible.filter(c => c.type === 'standby').length;
-  const tc = visible.filter(c => c.type === 'training').length;
-  document.getElementById('statFlights').textContent  = fc;
-  document.getElementById('statDuties').textContent   = dc;
-  document.getElementById('statStandby').textContent  = sc;
-  document.getElementById('statTraining').textContent = tc;
-}
-
-// ── TOTALS ─────────────────────────────────────────────────────────────────
-function updateTotals(visible) {
-  const totalDutyMins  = visible.reduce((a,c) => a + c.durationMinutes, 0);
-  const totalBlockMins = visible.reduce((a,c) => a + c.blockMinutes, 0);
-  const totalFlights   = visible.filter(c => c.type === 'flight').length;
-  document.getElementById('totHours').textContent     = fmtHoursDecimal(totalBlockMins);
-  document.getElementById('totDuty').textContent      = fmtHoursDecimal(totalDutyMins);
-  document.getElementById('totFlights').textContent   = totalFlights;
-  document.getElementById('totActivities').textContent= visible.length;
-}
-
-// ── FILTER BUTTONS ─────────────────────────────────────────────────────────
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentFilter = btn.dataset.filter;
-    if (currentView === 'calendar') { calSelectedDay = null; renderCalendar(); }
-    else renderFiltered();
-  });
-});
-monthSelect.addEventListener('change', e => {
-  currentMonthFilter = e.target.value;
-  if (currentView === 'calendar') {
-    if (e.target.value !== 'all') {
-      const [y, m] = e.target.value.split('-').map(Number);
-      calYear = y; calMonth = m - 1;
-    }
-    calSelectedDay = null;
-    renderCalendar();
-  } else {
-    renderFiltered();
-  }
-});
-
-// ── CARD TOGGLE ────────────────────────────────────────────────────────────
-function toggleCard(body, chevron) {
-  body.classList.toggle('open');
-  chevron.classList.toggle('open');
-}
-
-// ── SELECTION ──────────────────────────────────────────────────────────────
-function toggleSelect(e, id) {
-  e.stopPropagation();
-  const card = allCards.find(c => c.el.dataset.id == id);
-  if (!card) return;
-  if (selectedIds.has(id)) {
-    selectedIds.delete(id);
-    card.el.classList.remove('selected');
-  } else {
-    selectedIds.add(id);
-    card.el.classList.add('selected');
-  }
-  updateSelectionBar();
-}
-function updateSelectionBar() {
-  selCountEl.textContent = selectedIds.size;
-  selectionBar.classList.toggle('invisible', selectedIds.size === 0);
-}
-function clearSelection() {
-  selectedIds.forEach(id => {
-    const card = allCards.find(c => c.el.dataset.id == id);
-    if (card) card.el.classList.remove('selected');
-  });
-  selectedIds.clear();
-  updateSelectionBar();
-}
-function getSelectedCards() {
-  return allCards.filter(c => selectedIds.has(+c.el.dataset.id));
-}
-
-// ── iCAL EXPORT (all or selected) ─────────────────────────────────────────
-function exportIcal() {
-  if (!rosterData) return;
-  const entity = rosterData.entity || rosterData;
-  _doExportIcal(entity.activities || [], entity.crewId || 'CREW');
-}
-function exportSelectedIcal() {
-  if (!rosterData) return;
-  const entity = rosterData.entity || rosterData;
-  const selActs = getSelectedCards().map(c => c.act);
-  if (!selActs.length) return;
-  _doExportIcal(selActs, entity.crewId || 'CREW', '_selected');
-}
-function _doExportIcal(activities, crewId, suffix = '') {
-  function icsDate(iso) {
-    if (!iso) return null;
-    const d   = new Date(iso);
-    const pad = n => n.toString().padStart(2,'0');
-    return d.getUTCFullYear() + pad(d.getUTCMonth()+1) + pad(d.getUTCDate())
-         + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + '00Z';
-  }
-  function fold(line) {
-    const out = [];
-    while (line.length > 75) { out.push(line.slice(0,75)); line = ' ' + line.slice(75); }
-    out.push(line); return out.join('\r\n');
-  }
-  function icsEscape(str) {
-    return (str||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
-  }
-
-  const now = icsDate(new Date().toISOString());
-  let cal = [
-    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RAM Roster Viewer//EN',
-    'CALSCALE:GREGORIAN','METHOD:PUBLISH',
-    fold('X-WR-CALNAME:RAM Roster – ' + crewId),'X-WR-TIMEZONE:UTC',
-  ];
-
-  activities.forEach((act, idx) => {
-    const type       = classifyActivity(act);
-    const subs       = act.activities || [];
-    const flightLegs = subs.filter(s => s.type === 'flight-leg');
-    const role       = act.key?.role || '';
-    const keyName    = act.key?.name || '';
-    const uid        = 'ram-' + crewId + '-' + idx + '-' + (act.startTime||idx) + '@ram-roster';
-    const dtstart    = icsDate(act.startTime);
-    const dtend      = icsDate(act.endTime);
-    if (!dtstart || !dtend) return;
-
-    const typeLabel = { flight:'✈', standby:'🔁', training:'📚', other:'🗓' }[type] || '';
-    let route = act.startStation + ' → ' + act.endStation;
-    if (flightLegs.length > 1) {
-      const stops = [...new Set(flightLegs.map(l => l.startStation))];
-      stops.push(flightLegs[flightLegs.length-1].endStation);
-      route = stops.join(' → ');
-    }
-    const summary  = typeLabel + ' ' + route + (role ? ' ('+role+')' : '');
-    const location = act.startStation || '';
-    const descParts = [];
-    if (keyName) descParts.push('Trip: ' + keyName);
-    if (act.durationMinutes) descParts.push('Duration: ' + fmtDuration(act.durationMinutes));
-    flightLegs.forEach(l => {
-      const fn = (l.carrier||'') + (l.flightNumber||l.activityCode?.id||'');
-      descParts.push(fn + '  ' + l.startStation + ' → ' + l.endStation
-        + '  ' + fmtTime(l.startTime) + '–' + fmtTime(l.endTime)
-        + (l.aircraftType ? '  ' + l.aircraftType : '')
-        + (l.statusLabel  ? '  [' + l.statusLabel + ']' : ''));
-    });
-    // Collect unique CDB and OPL crew only for flight and training activities
-    if (type === 'flight' || type === 'training') {
-      const crewMap = new Map();
-      const collectCrew = (source) => {
-        (source.assignedCrew || []).forEach(c => {
-          const pos = (c.position?.id || c.position || '').toUpperCase();
-          if (pos === 'CDB' || pos === 'OPL') {
-            const key = c.crewId || (c.givenNames + c.surname);
-            if (!crewMap.has(key)) crewMap.set(key, { ...c, position: pos });
-          }
-        });
-      };
-      collectCrew(act);
-      subs.forEach(s => {
-        collectCrew(s);
-        (s.activities || []).forEach(ss => collectCrew(ss));
+      const dayMap = {};
+      allCards.forEach(c => {
+        const matchType = (currentFilter === 'all' || c.type === currentFilter);
+        if (!matchType) return;
+        const d = new Date(c.act.startTime);
+        if (d.getUTCFullYear() === calYear && d.getUTCMonth() === calMonth) {
+          const dayNum = d.getUTCDate();
+          if (!dayMap[dayNum]) dayMap[dayNum] = [];
+          dayMap[dayNum].push(c);
+        }
       });
-      [...crewMap.values()].forEach(c => {
-        descParts.push(c.position + ': ' + c.givenNames + ' ' + c.surname + ' (' + c.crewId + ')');
-      });
-    }
 
-    cal.push('BEGIN:VEVENT');
-    cal.push(fold('UID:' + icsEscape(uid)));
-    cal.push('DTSTAMP:' + now);
-    cal.push('DTSTART:' + dtstart);
-    cal.push('DTEND:' + dtend);
-    cal.push(fold('SUMMARY:' + icsEscape(summary)));
-    if (location) cal.push(fold('LOCATION:' + icsEscape(location)));
-    if (descParts.length) cal.push(fold('DESCRIPTION:' + icsEscape(descParts.join('\n'))));
-    cal.push('END:VEVENT');
-  });
-  cal.push('END:VCALENDAR');
-
-  downloadBlob(cal.join('\r\n'), 'text/calendar;charset=utf-8', 'ram_roster_' + crewId + suffix + '.ics');
-}
-
-// ── CSV EXPORT (selected) ──────────────────────────────────────────────────
-function exportSelectedCsv() {
-  if (!rosterData) return;
-  const entity  = rosterData.entity || rosterData;
-  const crewId  = entity.crewId || 'CREW';
-  const cards   = getSelectedCards();
-  if (!cards.length) return;
-
-  const csvEsc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
-  const rows   = [
-    ['Date','Flight Number','From','To','Sched Dep','Sched Arr','Actual Dep','Actual Arr','Entry Type','Aircraft','Registration','Block Time','Duration','Trip Code','Role']
-  ];
-
-  cards.forEach(({ act, type }) => {
-    const subs       = act.activities || [];
-    const flightLegs = subs.filter(s => s.type === 'flight-leg');
-    const role       = act.key?.role || '';
-    const keyName    = act.key?.name || '';
-    const eType      = entryType(act, type);
-
-    if (flightLegs.length > 0) {
-      // One row per leg
-      flightLegs.forEach(l => {
-        const fn      = (l.carrier||'') + (l.flightNumber||l.activityCode?.id||'');
-        const schDep  = l.scheduledStartTime ? csvTime(l.scheduledStartTime) : csvTime(l.startTime);
-        const schArr  = l.scheduledEndTime   ? csvTime(l.scheduledEndTime)   : csvTime(l.endTime);
-        const actDep  = csvTime(l.startTime);
-        const actArr  = csvTime(l.endTime);
-        const ac      = l.aircraftType || '';
-        const reg     = l.tail || '';
-        const block   = fmtDuration(l.blockTimeMinutes || l.durationMinutes);
-        rows.push([
-          csvDate(l.startTime), fn, l.startStation, l.endStation,
-          schDep, schArr, actDep, actArr, eType, ac, reg, block, '', keyName, role
-        ]);
-      });
-    } else {
-      // Non-flight: one summary row
-      rows.push([
-        fmtDate(act.startTime), '', act.startStation, act.endStation,
-        csvTime(act.startTime), csvTime(act.endTime),
-        csvTime(act.startTime), csvTime(act.endTime),
-        eType, '', '', fmtDuration(act.durationMinutes), keyName, role
-      ]);
-    }
-  });
-
-  const csv = rows.map(r => r.map(csvEsc).join(',')).join('\r\n');
-  downloadBlob(csv, 'text/csv;charset=utf-8', 'ram_roster_' + crewId + '_export.csv');
-}
-
-// ── DOWNLOAD HELPER ────────────────────────────────────────────────────────
-function downloadBlob(content, mime, filename) {
-  const blob = new Blob([content], { type: mime });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click();
-  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
-}
-
-// ── VIEW TOGGLE ────────────────────────────────────────────────────────────
-let currentView = 'list';
-let calYear  = new Date().getUTCFullYear();
-let calMonth = new Date().getUTCMonth(); // 0-based
-let calSelectedDay = null;
-
-function setView(view) {
-  currentView = view;
-  document.getElementById('btnListView').classList.toggle('active', view === 'list');
-  document.getElementById('btnCalView').classList.toggle('active', view === 'calendar');
-  document.getElementById('activityList').classList.toggle('hidden', view === 'calendar');
-  document.getElementById('calendarView').classList.toggle('hidden', view !== 'calendar');
-  totalsBar.classList.toggle('hidden', view === 'calendar');
-  selectionBar.classList.add('invisible');
-  if (view === 'calendar') {
-    // Default to first month that has data, or current month
-    if (allCards.length) {
-      const firstMonth = allCards.reduce((min, c) => c.month < min ? c.month : min, allCards[0].month);
-      const [y, m] = firstMonth.split('-').map(Number);
-      calYear = y; calMonth = m - 1;
-    }
-    calSelectedDay = null;
-    renderCalendar();
-  }
-}
-
-function calNav(dir) {
-  calMonth += dir;
-  if (calMonth > 11) { calMonth = 0; calYear++; }
-  if (calMonth < 0)  { calMonth = 11; calYear--; }
-  calSelectedDay = null;
-  renderCalendar();
-}
-
-function renderCalendar() {
-  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const ICONS  = { flight: 'ti-plane', standby: 'ti-clock', training: 'ti-school', other: 'ti-briefcase' };
-
-  document.getElementById('calMonthLabel').textContent = MONTHS[calMonth] + ' ' + calYear;
-
-  const today    = new Date();
-  const firstDay = new Date(Date.UTC(calYear, calMonth, 1));
-  const lastDay  = new Date(Date.UTC(calYear, calMonth + 1, 0));
-  const startDow = firstDay.getUTCDay(); // 0=Sun
-  const totalDays = lastDay.getUTCDate();
-
-  // Build a map: "YYYY-MM-DD" → [cards]
-  const dayMap = {};
-  const monthKey = calYear + '-' + String(calMonth + 1).padStart(2, '0');
-  allCards.filter(c => {
-    const matchType = (currentFilter === 'all' || c.type === currentFilter);
-    return matchType;
-  }).forEach(c => {
-    const d = new Date(c.act.startTime);
-    const key = d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0');
-    if (!dayMap[key]) dayMap[key] = [];
-    dayMap[key].push(c);
-  });
-
-  const grid = document.getElementById('calGrid');
-  grid.innerHTML = '';
-
-  // Leading empty cells
-  for (let i = 0; i < startDow; i++) {
-    const blank = document.createElement('div');
-    blank.className = 'cal-cell other-month';
-    grid.appendChild(blank);
-  }
-
-  for (let d = 1; d <= totalDays; d++) {
-    const dateKey = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-    const cards   = dayMap[dateKey] || [];
-    const isToday = (d === today.getUTCDate() && calMonth === today.getUTCMonth() && calYear === today.getUTCFullYear());
-    const isSel   = (calSelectedDay === dateKey);
-
-    const cell = document.createElement('div');
-    cell.className = 'cal-cell' + (cards.length ? ' has-activity' : '') + (isToday ? ' is-today' : '') + (isSel ? ' selected-day' : '');
-    cell.dataset.date = dateKey;
-
-    let inner = `<span class="cal-cell-day">${d}</span>`;
-    const shown = cards.slice(0, 2);
-    shown.forEach(c => {
-      const label = c.act.startStation && c.act.endStation
-        ? c.act.startStation + '→' + c.act.endStation
-        : (c.act.key?.name || c.type);
-      inner += `<div class="cal-pill ${c.type}"><i class="ti ${ICONS[c.type]||'ti-point'}"></i>${label}</div>`;
-    });
-    if (cards.length > 2) inner += `<div class="cal-pill-more">+${cards.length - 2} more</div>`;
-    cell.innerHTML = inner;
-
-    if (cards.length) {
-      cell.addEventListener('click', () => selectCalDay(dateKey, cards, cell));
-    }
-    grid.appendChild(cell);
-  }
-
-  // Update day panel if a day is selected
-  if (calSelectedDay && dayMap[calSelectedDay]) {
-    renderDayPanel(calSelectedDay, dayMap[calSelectedDay]);
-  } else {
-    document.getElementById('calDayPanel').classList.add('hidden');
-  }
-}
-
-function selectCalDay(dateKey, cards, cell) {
-  // Deselect previous
-  document.querySelectorAll('.cal-cell.selected-day').forEach(el => el.classList.remove('selected-day'));
-  if (calSelectedDay === dateKey) {
-    calSelectedDay = null;
-    document.getElementById('calDayPanel').classList.add('hidden');
-    return;
-  }
-  calSelectedDay = dateKey;
-  cell.classList.add('selected-day');
-  renderDayPanel(dateKey, cards);
-}
-
-function renderDayPanel(dateKey, cards) {
-  const panel = document.getElementById('calDayPanel');
-  const [y, m, d] = dateKey.split('-').map(Number);
-  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const dt = new Date(Date.UTC(y, m-1, d));
-  const dayName = DAYS[dt.getUTCDay()];
-
-  document.getElementById('calDayTitle').textContent = dayName + ', ' + d + ' ' + MONTHS[m-1] + ' ' + y;
-  const plural = cards.length === 1 ? '1 activity' : cards.length + ' activities';
-  document.getElementById('calDayCount').textContent = plural;
-
-  const container = document.getElementById('calDayCards');
-  container.innerHTML = '';
-
-  const BADGE = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' };
-  const LABEL = { flight:'Flight', standby:'Reserve', training:'Training', other:'Duty' };
-
-  cards.forEach(c => {
-    const act = c.act;
-    const subs = act.activities || [];
-    const legs = subs.filter(s => s.type === 'flight-leg');
-
-    // Crew for flight/training
-    const crewMap = new Map();
-    if (c.type === 'flight' || c.type === 'training') {
-      const collectC = (src) => {
-        (src.assignedCrew || []).forEach(cm => {
-          const pos = (cm.position?.id || cm.position || '').toUpperCase();
-          if (pos === 'CDB' || pos === 'OPL') {
-            const key = cm.crewId || (cm.givenNames + cm.surname);
-            if (!crewMap.has(key)) crewMap.set(key, { ...cm, position: pos });
-          }
-        });
-      };
-      collectC(act);
-      subs.forEach(s => { collectC(s); (s.activities||[]).forEach(ss => collectC(ss)); });
-    }
-    const crewList = [...crewMap.values()];
-
-    let routeText = (act.startStation || '?') + ' → ' + (act.endStation || '?');
-    if (legs.length > 1) {
-      const stops = [...new Set(legs.map(l => l.startStation))];
-      stops.push(legs[legs.length-1].endStation);
-      routeText = stops.join(' → ');
-    }
-
-    const card = document.createElement('div');
-    card.className = 'day-card';
-
-    // Build legs + layovers HTML (interleaved in sub-activity order)
-    const SKIP = new Set(['briefing', 'debriefing']);
-    let legsHTML = '';
-    subs.filter(s => !SKIP.has(s.type)).forEach(s => {
-      if (s.type === 'flight-leg') {
-        const fn   = (s.carrier||'') + (s.flightNumber || s.activityCode?.id || '');
-        const crew = crewList.map(cm => cm.position + ' ' + cm.surname).join(', ');
-        legsHTML += `<div style="padding:6px 13px 8px; border-top:1px solid var(--border); border-left:2px solid var(--ram-red); margin-left:0;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
-            <span style="font-size:11px;font-weight:700;color:var(--ram-red);font-family:var(--mono);">${fn}</span>
-            <span style="font-size:12px;font-weight:600;color:var(--text);">${s.startStation} → ${s.endStation}</span>
-            <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);margin-left:auto;">Block ${fmtDuration(s.blockTimeMinutes||s.durationMinutes)}</span>
-          </div>
-          <div style="font-size:11px;color:var(--text-3);font-family:var(--mono);">${s.aircraftType||''} · ${fmtTime(s.startTime)}–${fmtTime(s.endTime)}</div>
-          ${crew ? `<div style="font-size:11px;color:var(--text-2);margin-top:3px;"><i class="ti ti-users" style="font-size:10px;margin-right:3px;"></i>${crew}</div>` : ''}
-        </div>`;
-      } else if (s.type === 'layover') {
-        legsHTML += `<div style="padding:5px 13px; border-top:1px solid var(--border); border-left:2px solid var(--blue); display:flex; align-items:center; gap:8px;">
-          <i class="ti ti-moon" style="font-size:11px;color:var(--blue);"></i>
-          <span style="font-size:11px;font-weight:600;color:var(--blue);font-family:var(--mono);">Layover</span>
-          <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);">${s.startStation} · ${fmtDuration(s.durationMinutes)}</span>
-          <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);margin-left:auto;">${fmtTime(s.startTime)}–${fmtTime(s.endTime)}</span>
-        </div>`;
+      // Padding cells
+      for (let i = 0; i < firstDay; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell other-month';
+        grid.appendChild(cell);
       }
-    });
 
-    card.innerHTML = `
-      <div class="day-card-header">
-        <span class="type-badge ${BADGE[c.type]}">${LABEL[c.type]}</span>
-        <span class="day-card-route">${routeText}</span>
-        <span class="day-card-time">${fmtTime(act.startTime)}–${fmtTime(act.endTime)}</span>
-        <span class="day-card-dur">${fmtDuration(act.durationMinutes)}</span>
-      </div>
-      ${legsHTML}`;
+      const today = new Date();
 
-    container.appendChild(card);
-  });
+      // Calendar structural row population
+      for (let d = 1; d <= numDays; d++) {
+        const cards = dayMap[d] || [];
+        const dateKey = `${calYear}-${(calMonth+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+        const isToday = (d === today.getUTCDate() && calMonth === today.getUTCMonth() && calYear === today.getUTCFullYear());
+        const isSel = (calSelectedDay === dateKey);
 
-  panel.classList.remove('hidden');
-}
-</script>
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell' + (cards.length ? ' has-activity' : '') + (isToday ? ' is-today' : '') + (isSel ? ' selected-day' : '');
+        cell.dataset.date = dateKey;
+
+        let inner = `<span class="cal-cell-day">${d}</span>`;
+        const shown = cards.slice(0, 2);
+        shown.forEach(c => {
+          const label = c.act.startStation && c.act.endStation ? c.act.startStation + '→' + c.act.endStation : (c.act.activityCode?.id || c.type);
+          inner += `<div class="cal-pill ${c.type}"><i class="ti ${ICONS[c.type]||'ti-point'}"></i>${label}</div>`;
+        });
+
+        if (cards.length > 2) inner += `<div class="cal-pill-more">+${cards.length - 2} more</div>`;
+        cell.innerHTML = inner;
+
+        if (cards.length) {
+          cell.addEventListener('click', () => selectCalDay(dateKey, cards, cell));
+        }
+        grid.appendChild(cell);
+      }
+
+      if (calSelectedDay && dayMap[parseInt(calSelectedDay.split('-')[2])]) {
+        const activeDayNum = parseInt(calSelectedDay.split('-')[2]);
+        renderDayPanel(calSelectedDay, dayMap[activeDayNum]);
+      } else {
+        document.getElementById('calDayPanel').classList.add('hidden');
+      }
+    }
+
+    function selectCalDay(dateKey, cards, cell) {
+      document.querySelectorAll('.cal-cell.selected-day').forEach(el => el.classList.remove('selected-day'));
+      if (calSelectedDay === dateKey) {
+        calSelectedDay = null;
+        document.getElementById('calDayPanel').classList.add('hidden');
+        return;
+      }
+      calSelectedDay = dateKey;
+      cell.classList.add('selected-day');
+      renderDayPanel(dateKey, cards);
+    }
+
+    function renderDayPanel(dateKey, cards) {
+      const panel = document.getElementById('calDayPanel');
+      const title = document.getElementById('calDayTitle');
+      const count = document.getElementById('calDayCount');
+      const cardsContainer = document.getElementById('calDayCards');
+
+      const [y, m, d] = dateKey.split('-');
+      const dateObj = new Date(Date.UTC(y, m-1, d));
+      title.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+      count.textContent = cards.length + ' structural events';
+
+      cardsContainer.innerHTML = '';
+      
+      cards.forEach(c => {
+        const act = c.act;
+        const subs = act.activities || [];
+        const legs = subs.filter(s => s.type === 'flight-leg');
+
+        let routeText = (act.startStation || 'Duty') + (act.endStation ? ' → ' + act.endStation : '');
+        if (legs.length > 1) {
+          const stops = [...new Set(legs.map(l => l.startStation))];
+          stops.push(legs[legs.length-1].endStation);
+          routeText = stops.join(' → ');
+        } else if (act.activityCode?.id) {
+          routeText = act.activityCode.id + (act.activityCode.description ? ' · ' + act.activityCode.description : '');
+        }
+
+        const card = document.createElement('div');
+        card.className = 'day-card';
+
+        const SKIP = new Set(['briefing', 'debriefing']);
+        let legsHTML = '';
+        
+        if (subs.length === 0) {
+          legsHTML += `
+            <div style="padding:6px 13px; border-top:1px solid var(--border); border-left:2px solid var(--ram-red); display:flex; align-items:center; gap:8px;">
+              <span style="font-size:11px;font-weight:600;color:var(--text);font-family:var(--mono);">${act.activityCode?.id || 'DUTY'}</span>
+              <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);">${act.activityCode?.description || 'Duty Block'}</span>
+              <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);margin-left:auto;">${fmtTime(act.startTime)}–${fmtTime(act.endTime)}</span>
+            </div>`;
+        } else {
+          subs.filter(s => !SKIP.has(s.type)).forEach(s => {
+            if (s.type === 'flight-leg') {
+              const fn = (s.carrier||'') + (s.flightNumber || s.activityCode?.id || '');
+              legsHTML += `
+                <div style="padding:6px 13px; border-top:1px solid var(--border); border-left:2px solid var(--ram-red); display:flex; flex-direction:column;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:11px;font-weight:600;color:var(--ram-red);font-family:var(--mono);">${fn}</span>
+                    <span style="font-size:11px;color:var(--text);">${s.startStation}→${s.endStation}</span>
+                    <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);margin-left:auto;">${fmtTime(s.startTime)}–${fmtTime(s.endTime)}</span>
+                  </div>
+                </div>`;
+            } else if (s.type === 'layover') {
+              legsHTML += `
+                <div style="padding:5px 13px; border-top:1px solid var(--border); border-left:2px solid var(--blue); display:flex; align-items:center; gap:8px;">
+                  <i class="ti ti-moon" style="font-size:11px;color:var(--blue);"></i>
+                  <span style="font-size:11px;font-weight:600;color:var(--blue);font-family:var(--mono);">Layover</span>
+                  <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);">${s.startStation} · ${fmtDuration(s.durationMinutes)}</span>
+                  <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);margin-left:auto;">${fmtTime(s.startTime)}–${fmtTime(s.endTime)}</span>
+                </div>`;
+            } else {
+              legsHTML += `
+                <div style="padding:5px 13px; border-top:1px solid var(--border); border-left:2px solid var(--green); display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:11px;font-weight:600;color:var(--green);font-family:var(--mono);">${(s.activityCode?.id || s.type).toUpperCase()}</span>
+                  <span style="font-size:11px;color:var(--text-2);">${s.activityCode?.description || 'Ground Session'}</span>
+                  <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);margin-left:auto;">${fmtTime(s.startTime)}–${fmtTime(s.endTime)}</span>
+                </div>`;
+            }
+          });
+        }
+
+        const badgeClass = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' }[c.type];
+        const badgeLabel = { flight:'Flight', standby:'Reserve', training:'Training', other:'Duty' }[c.type];
+
+        card.innerHTML = `
+          <div class="day-card-header">
+            <span class="type-badge ${badgeClass}">${badgeLabel}</span>
+            <div class="day-card-route">${routeText}</div>
+            <div class="day-card-time">${fmtTime(act.startTime)}–${fmtTime(act.endTime)} <span class="day-card-dur">(${fmtDuration(act.durationMinutes)})</span></div>
+          </div>
+          ${legsHTML}`;
+        cardsContainer.appendChild(card);
+      });
+
+      panel.classList.remove('hidden');
+    }
+  </script>
 </body>
 </html>
