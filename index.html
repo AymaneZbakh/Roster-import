@@ -503,11 +503,15 @@
     }
     .delay-tag.late { background: rgba(226,75,74,0.15); color: #e24b4a; }
 
-    /* ── NEXT FLIGHT HIGHLIGHT ──────────────────────────────────────────── */
+    /* ── NEXT FLIGHT HIGHLIGHT (≥24h: blue; <24h: green) ───────────────── */
     .next-flight-card {
       border-color: var(--blue) !important;
       box-shadow: 0 0 0 1px var(--blue), 0 0 20px rgba(74,158,255,0.12);
       position: relative;
+    }
+    .next-flight-card.countdown-mode {
+      border-color: var(--green) !important;
+      box-shadow: 0 0 0 1px var(--green), 0 0 20px rgba(93,184,122,0.15) !important;
     }
     .next-flight-banner {
       display: flex;
@@ -536,6 +540,39 @@
       0%, 100% { opacity: 1; transform: scale(1); }
       50%       { opacity: 0.4; transform: scale(0.7); }
     }
+
+    /* Countdown banner (green) shown when takeoff < 24h */
+    .countdown-banner {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--green-dim);
+      border-bottom: 1px solid rgba(93,184,122,0.25);
+      padding: 5px 14px;
+      font-size: 10px;
+      font-weight: 700;
+      font-family: var(--mono);
+      color: var(--green);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .countdown-banner i { font-size: 12px; }
+    .countdown-banner .cd-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: nfPulse 1.6s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    .countdown-banner .cd-timer {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--green);
+      font-family: var(--mono);
+      margin-left: 2px;
+    }
+
     #nextFlightBtn {
       display: none;
       align-items: center;
@@ -553,6 +590,12 @@
       white-space: nowrap;
       flex-shrink: 0;
     }
+    #nextFlightBtn.countdown-mode {
+      border-color: rgba(93,184,122,0.4);
+      background: var(--green-dim);
+      color: var(--green);
+    }
+    #nextFlightBtn.countdown-mode:hover { background: rgba(93,184,122,0.22); border-color: var(--green); }
     #nextFlightBtn:hover { background: rgba(74,158,255,0.2); border-color: var(--blue); }
     #nextFlightBtn i { font-size: 15px; }
 
@@ -1170,6 +1213,7 @@
     <button id="nextFlightBtn" onclick="scrollToNextFlight()">
       <i class="ti ti-calendar-event"></i> Next Duty
     </button>
+
     <button class="btn" id="refreshBtn" onclick="refreshRoster()">
       <i class="ti ti-refresh"></i> Refresh
     </button>
@@ -1682,6 +1726,9 @@ function renderFiltered() {
     visible.forEach(c => activityList.appendChild(c.el));
 
     if (nextCard) {
+      const depMs = new Date(nextCard.act.startTime).getTime() - now;
+      const isCountdownMode = depMs < 86400000; // < 24 hours
+
       nextCard.el.classList.add('next-flight-card');
 
       const body    = nextCard.el.querySelector('.card-body');
@@ -1689,23 +1736,66 @@ function renderFiltered() {
       if (body)    body.classList.add('open');
       if (chevron) chevron.classList.add('open');
 
-      const dutyIcons = { flight: 'ti-plane-departure', standby: 'ti-clock', training: 'ti-school', other: 'ti-briefcase' };
-      const dutyLabels = { flight: 'NEXT FLIGHT', standby: 'NEXT RESERVE', training: 'NEXT TRAINING', other: 'NEXT DUTY' };
-      const dutyIcon  = dutyIcons[nextCard.type]  || 'ti-calendar-event';
-      const dutyLabel = dutyLabels[nextCard.type] || 'NEXT DUTY';
-
-      const banner = document.createElement('div');
-      banner.className = 'next-flight-banner';
-      const depMs = new Date(nextCard.act.startTime).getTime() - now;
-      const depH  = Math.floor(depMs / 3600000);
-      const depM  = Math.floor((depMs % 3600000) / 60000);
-      const countdown = depH > 0 ? `in ${depH}h ${depM.toString().padStart(2,'0')}m` : `in ${depM}m`;
-      banner.innerHTML = `<span class="nf-dot"></span><i class="ti ${dutyIcon}"></i> ${dutyLabel} &nbsp;·&nbsp; Starts ${countdown}`;
-      nextCard.el.insertBefore(banner, nextCard.el.firstChild);
-
       const btn = document.getElementById('nextFlightBtn');
       btn.style.display = 'inline-flex';
       btn._nextCard = nextCard.el;
+
+      if (isCountdownMode) {
+        // ── < 24h: green countdown banner, no blue "next duty" highlight ──
+        nextCard.el.classList.add('countdown-mode');
+        btn.classList.add('countdown-mode');
+
+        const depH = Math.floor(depMs / 3600000);
+        const depM = Math.floor((depMs % 3600000) / 60000);
+        const depS = Math.floor((depMs % 60000) / 1000);
+
+        function fmtCd(ms) {
+          const s = Math.max(0, Math.floor(ms / 1000));
+          const h = Math.floor(s / 3600);
+          const m = Math.floor((s % 3600) / 60);
+          const sc = s % 60;
+          return h > 0
+            ? `${h}h ${m.toString().padStart(2,'0')}m ${sc.toString().padStart(2,'0')}s`
+            : `${m}m ${sc.toString().padStart(2,'0')}s`;
+        }
+
+        const banner = document.createElement('div');
+        banner.className = 'countdown-banner';
+        const cdId = 'cdbanner-' + (nextCard.act.startTime || Math.random());
+        banner.innerHTML = `<span class="cd-dot"></span><i class="ti ti-clock-bolt"></i> TAKEOFF IN &nbsp;<span class="cd-timer" id="${cdId}">${fmtCd(depMs)}</span>`;
+        nextCard.el.insertBefore(banner, nextCard.el.firstChild);
+
+        // Live countdown every second
+        const tid = setInterval(() => {
+          const el = document.getElementById(cdId);
+          if (!el) { clearInterval(tid); return; }
+          const rem = new Date(nextCard.act.startTime).getTime() - Date.now();
+          if (rem <= 0) { el.closest('.countdown-banner').innerHTML = `<span class="cd-dot"></span><i class="ti ti-plane-departure"></i> DEPARTING NOW`; clearInterval(tid); return; }
+          el.textContent = fmtCd(rem);
+        }, 1000);
+        urgentTimers.push(tid);
+
+        btn.innerHTML = `<i class="ti ti-clock-bolt"></i> Countdown`;
+      } else {
+        // ── ≥ 24h: blue "next duty" banner as before ──
+        nextCard.el.classList.remove('countdown-mode');
+        btn.classList.remove('countdown-mode');
+
+        const dutyIcons  = { flight: 'ti-plane-departure', standby: 'ti-clock', training: 'ti-school', other: 'ti-briefcase' };
+        const dutyLabels = { flight: 'NEXT FLIGHT', standby: 'NEXT RESERVE', training: 'NEXT TRAINING', other: 'NEXT DUTY' };
+        const dutyIcon   = dutyIcons[nextCard.type]  || 'ti-calendar-event';
+        const dutyLabel  = dutyLabels[nextCard.type] || 'NEXT DUTY';
+
+        const banner = document.createElement('div');
+        banner.className = 'next-flight-banner';
+        const depH = Math.floor(depMs / 3600000);
+        const depM = Math.floor((depMs % 3600000) / 60000);
+        const countdown = depH > 0 ? `in ${depH}h ${depM.toString().padStart(2,'0')}m` : `in ${depM}m`;
+        banner.innerHTML = `<span class="nf-dot"></span><i class="ti ${dutyIcon}"></i> ${dutyLabel} &nbsp;·&nbsp; Starts ${countdown}`;
+        nextCard.el.insertBefore(banner, nextCard.el.firstChild);
+
+        btn.innerHTML = `<i class="ti ti-calendar-event"></i> Next Duty`;
+      }
     } else {
       document.getElementById('nextFlightBtn').style.display = 'none';
     }
