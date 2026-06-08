@@ -33,7 +33,6 @@
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     html { scroll-behavior: smooth; }
 
     body {
@@ -83,7 +82,7 @@
 
     .pin-box .logo-container {
       width: 100%;
-      max-width: 260px;
+      max-width: 220px;
       height: auto;
       margin: 0 auto 1.5rem;
       display: flex;
@@ -95,7 +94,6 @@
       width: 100%;
       height: auto;
       object-fit: contain;
-      filter: drop-shadow(0 0 14px rgba(200,16,46,0.15)) brightness(1.05);
     }
 
     .pin-box h2 {
@@ -128,7 +126,6 @@
       letter-spacing: 6px;
       text-align: center;
       outline: none;
-      transition: border-color 0.15s;
     }
 
     .pin-input-wrapper input:focus {
@@ -143,7 +140,7 @@
       margin-bottom: 16px;
     }
 
-    /* Digital Keypad Styles */
+    /* Keypad Layout */
     .numpad-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -177,10 +174,6 @@
       color: var(--text-2);
     }
 
-    .numpad-btn.action-btn:active {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
     .pin-btn {
       width: 100%;
       background: var(--ram-red);
@@ -192,15 +185,10 @@
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      transition: opacity 0.15s;
       box-shadow: 0 0 15px var(--ram-red-glow);
     }
 
-    .pin-btn:hover {
-      opacity: 0.9;
-    }
-
-    /* Main App Workspace */
+    /* Main Workspace Elements */
     .app {
       position: relative;
       z-index: 1;
@@ -220,8 +208,7 @@
     }
 
     .header-logo-container {
-      width: 110px;
-      height: auto;
+      width: 130px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -238,7 +225,6 @@
       font-size: 16px;
       font-weight: 600;
       color: var(--text);
-      letter-spacing: -0.2px;
     }
 
     .header-text p {
@@ -255,20 +241,13 @@
       gap: 7px;
       font-family: var(--sans);
       font-size: 12px;
-      font-weight: 500;
       padding: 7px 14px;
       border-radius: var(--r);
       border: 1px solid var(--border-active);
       background: var(--bg-card);
       color: var(--text-2);
       cursor: pointer;
-      transition: all .15s;
-      letter-spacing: 0.2px;
-      white-space: nowrap;
-      flex-shrink: 0;
     }
-    .btn:hover { background: var(--bg-hover); color: var(--text); border-color: var(--ram-red); }
-    .btn i { font-size: 15px; }
 
     .stats-grid {
       display: grid;
@@ -282,15 +261,12 @@
       border: 1px solid var(--border);
       border-radius: var(--r);
       padding: 14px 16px;
-      transition: border-color .15s;
     }
-    .stat:hover { border-color: var(--border-active); }
 
     .stat-label {
       font-size: 10px;
       color: var(--text-3);
       text-transform: uppercase;
-      letter-spacing: 1px;
       font-family: var(--mono);
       margin-bottom: 6px;
     }
@@ -298,8 +274,6 @@
     .stat-value {
       font-size: 26px;
       font-weight: 700;
-      color: var(--text);
-      line-height: 1;
       font-family: var(--mono);
     }
 
@@ -315,44 +289,30 @@
       font-size: 11px;
       color: var(--text-3);
       font-family: var(--mono);
-      margin-right: 2px;
     }
 
     .filter-btn {
       font-family: var(--sans);
       font-size: 12px;
-      font-weight: 500;
       padding: 5px 13px;
       border-radius: 20px;
       border: 1px solid var(--border);
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
-      transition: all .15s;
     }
-    .filter-btn:hover:not(.active) { background: var(--bg-card); color: var(--text); border-color: var(--border-active); }
+
     .filter-btn.active { background: var(--ram-red); color: white; border-color: transparent; }
 
     .select-month {
       background: var(--bg-card);
       border: 1px solid var(--border-active);
       color: var(--text-2);
-      font-family: var(--sans);
       font-size: 12px;
-      font-weight: 500;
       padding: 5px 12px;
       border-radius: 20px;
       outline: none;
-      cursor: pointer;
-      transition: all .15s;
       margin-left: auto;
-    }
-    .select-month:hover { border-color: var(--ram-red); color: var(--text); }
-
-    @media (max-width: 640px) {
-      .select-month { margin-left: 0; width: 100%; margin-top: 4px; }
-      .header { gap: 14px; }
-      .header-logo-container { width: 85px; }
     }
 
     .activity-list { display: flex; flex-direction: column; gap: 8px; }
@@ -362,9 +322,7 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       overflow: hidden;
-      transition: border-color .15s;
     }
-    .activity-card:hover { border-color: var(--border-active); }
 
     .card-header {
       display: flex;
@@ -372,9 +330,7 @@
       gap: 10px;
       padding: 13px 16px;
       cursor: pointer;
-      user-select: none;
     }
-    .card-header:hover { background: rgba(255,255,255,0.02); }
 
     .type-badge {
       font-size: 9px;
@@ -382,8 +338,6 @@
       padding: 3px 8px;
       border-radius: 4px;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
-      flex-shrink: 0;
       font-family: var(--mono);
     }
     .badge-flight   { background: var(--blue-dim); color: var(--blue); }
@@ -391,632 +345,127 @@
     .badge-training { background: var(--green-dim); color: var(--green); }
     .badge-other    { background: rgba(255,255,255,0.06); color: var(--text-2); }
 
-    .card-date {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-2);
-      min-width: 60px;
-      flex-shrink: 0;
-      font-family: var(--mono);
-    }
-
-    .card-route {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text);
-      flex: 1;
-      min-width: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .card-role { font-size: 11px; font-weight: 400; color: var(--text-3); }
-
-    .card-time {
-      font-size: 11px;
-      color: var(--text-3);
-      text-align: right;
-      white-space: nowrap;
-      flex-shrink: 0;
-      font-family: var(--mono);
-    }
-
-    .card-chevron {
-      font-size: 16px;
-      color: var(--text-3);
-      transition: transform .2s;
-      flex-shrink: 0;
-    }
+    .card-date { font-size: 12px; font-family: var(--mono); color: var(--text-2); min-width: 60px; }
+    .card-route { font-size: 14px; font-weight: 600; flex: 1; }
+    .card-time { font-size: 11px; color: var(--text-3); font-family: var(--mono); }
+    .card-chevron { font-size: 16px; color: var(--text-3); transition: transform .2s; }
     .card-chevron.open { transform: rotate(180deg); }
 
-    .card-body {
-      border-top: 1px solid var(--border);
-      padding: 16px;
-      display: none;
-    }
+    .card-body { border-top: 1px solid var(--border); padding: 16px; display: none; }
     .card-body.open { display: block; }
 
-    .detail-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 16px;
-    }
+    .detail-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+    .detail-item label { font-size: 10px; color: var(--text-3); text-transform: uppercase; display: block; margin-bottom: 4px; font-family: var(--mono); }
+    .detail-item span { font-size: 13px; font-family: var(--mono); }
 
-    .detail-item label {
-      font-size: 10px;
-      color: var(--text-3);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      display: block;
-      margin-bottom: 4px;
-      font-family: var(--mono);
-    }
-    .detail-item span {
-      font-size: 13px;
-      color: var(--text);
-      font-weight: 500;
-      font-family: var(--mono);
-    }
-
-    .section-label {
-      font-size: 10px;
-      color: var(--text-3);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-family: var(--mono);
-      margin: 14px 0 8px;
-    }
-
+    .section-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; font-family: var(--mono); margin: 14px 0 8px; }
     .timeline { display: flex; flex-direction: column; gap: 4px; }
-
-    .tl-row {
-      display: grid;
-      grid-template-columns: 88px 1fr auto;
-      align-items: start;
-      gap: 12px;
-      padding: 10px 12px;
-      background: var(--bg);
-      border-radius: 6px;
-      border-left: 2px solid transparent;
-    }
+    .tl-row { display: grid; grid-template-columns: 88px 1fr auto; gap: 12px; padding: 10px 12px; background: var(--bg); border-radius: 6px; border-left: 2px solid transparent; }
     .flight-row  { border-color: var(--ram-red); }
     .layover-row { border-color: var(--blue); }
     .gt-row      { border-color: var(--green); }
 
-    .tl-type { font-size: 10px; color: var(--text-3); padding-top: 2px; font-family: var(--mono); }
-    .tl-type--layover { color: var(--blue); }
-    .tl-type--ground  { color: var(--green); }
-    .tl-label { font-size: 13px; font-weight: 600; color: var(--text); }
-    .tl-sublabel { font-size: 11px; color: var(--text-2); margin-top: 3px; font-family: var(--mono); }
-    .tl-time { font-size: 11px; color: var(--text-3); text-align: right; white-space: nowrap; padding-top: 2px; font-family: var(--mono); }
+    .tl-type { font-size: 10px; color: var(--text-3); font-family: var(--mono); }
+    .tl-label { font-size: 13px; font-weight: 600; }
+    .tl-sublabel { font-size: 11px; color: var(--text-2); font-family: var(--mono); margin-top: 3px; }
+    .tl-time { font-size: 11px; color: var(--text-3); font-family: var(--mono); text-align: right; }
 
-    .fn-tag  { font-size: 11px; font-weight: 600; color: var(--ram-red); font-family: var(--mono); }
-    .delay-tag {
-      font-size: 9px;
-      background: var(--green-dim);
-      color: var(--green);
-      padding: 1px 5px;
-      border-radius: 3px;
-      margin-left: 5px;
-      font-family: var(--mono);
-      font-weight: 500;
-    }
-    .delay-tag.late { background: rgba(226,75,74,0.15); color: #e24b4a; }
+    .fn-tag { font-size: 11px; font-weight: 600; color: var(--ram-red); font-family: var(--mono); }
 
     .crew-grid { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
-
-    .crew-pill {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 6px 10px;
-      transition: border-color .15s;
-    }
-    .crew-pill:hover { border-color: var(--border-active); }
-
-    .crew-avatar {
-      width: 24px; height: 24px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 9px;
-      font-weight: 600;
-      flex-shrink: 0;
-      font-family: var(--mono);
-    }
-    .av-cdb   { background: rgba(74,158,255,0.2);  color: var(--blue); }
-    .av-opl   { background: rgba(93,184,122,0.2);  color: var(--green); }
-    .av-ca    { background: rgba(244,192,209,0.2); color: #f4a0be; }
-    .av-cc    { background: rgba(232,168,64,0.2);  color: var(--amber); }
-    .av-ep    { background: rgba(93,184,122,0.15); color: #7dca96; }
-    .av-ef    { background: rgba(255,255,255,0.08); color: var(--text-2); }
+    .crew-pill { display: flex; align-items: center; gap: 9px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r); padding: 6px 10px; }
+    .crew-avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; font-family: var(--mono); }
+    .av-cdb { background: rgba(74,158,255,0.2); color: var(--blue); }
+    .av-opl { background: rgba(93,184,122,0.2); color: var(--green); }
     .av-other { background: rgba(255,255,255,0.08); color: var(--text-2); }
-
-    .crew-name { font-size: 12px; color: var(--text); line-height: 1.3; }
+    .crew-name { font-size: 12px; }
     .crew-meta { font-size: 10px; color: var(--text-3); font-family: var(--mono); }
 
-    .empty-state {
-      text-align: center;
-      padding: 5rem 1rem;
-      color: var(--text-3);
-    }
-    .empty-state i { font-size: 42px; display: block; margin-bottom: 12px; color: var(--ram-red); }
-    .empty-state p { font-size: 14px; font-weight: 500; color: var(--text-2); margin-bottom: 4px; }
-    .empty-state span { font-size: 12px; font-family: var(--mono); }
-
-    @media (max-width: 640px) {
-      .app { padding: 1.25rem 1rem 3rem; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .detail-grid { grid-template-columns: repeat(2, 1fr); }
-      .tl-row { grid-template-columns: 72px 1fr auto; gap: 8px; }
-      .header-text h1 { font-size: 15px; }
-    }
-
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-
-    .hidden { display: none !important; }
-    .spin   { animation: spin 1s linear infinite; }
-
-    .activity-card.selected {
-      border-color: var(--ram-red);
-      background: rgba(200,16,46,0.04);
-    }
-    .card-select-cb {
-      width: 16px; height: 16px;
-      border-radius: 4px;
-      border: 1.5px solid var(--border-active);
-      background: var(--bg-input);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      cursor: pointer;
-      transition: all .15s;
-    }
-    .activity-card.selected .card-select-cb {
-      background: var(--ram-red);
-      border-color: var(--ram-red);
-    }
-    .card-select-cb i { font-size: 11px; color: white; opacity: 0; transition: opacity .15s; }
-    .activity-card.selected .card-select-cb i { opacity: 1; }
-
-    .selection-bar {
-      position: sticky;
-      bottom: 1.5rem;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-active);
-      border-radius: 12px;
-      padding: 10px 16px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-      margin-top: 16px;
-      transition: opacity .2s, transform .2s;
-    }
-    .selection-bar.invisible { opacity: 0; pointer-events: none; transform: translateY(8px); }
-    .sel-count {
-      font-size: 12px;
-      font-family: var(--mono);
-      color: var(--text-2);
-      flex: 1;
-    }
-    .sel-count strong { color: var(--text); }
-    .btn-sel {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-family: var(--sans); font-size: 12px; font-weight: 600;
-      padding: 7px 14px; border-radius: var(--r);
-      border: none; cursor: pointer; transition: all .15s; white-space: nowrap;
-    }
-    .btn-sel i { font-size: 14px; }
-    .btn-sel-ical { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(74,158,255,0.25); }
-    .btn-sel-ical:hover { background: rgba(74,158,255,0.2); }
-    .btn-sel-csv  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(93,184,122,0.25); }
-    .btn-sel-csv:hover  { background: rgba(93,184,122,0.2); }
-    .btn-sel-clear { background: transparent; color: var(--text-3); border: 1px solid var(--border); font-weight: 500; }
-    .btn-sel-clear:hover { color: var(--text-2); border-color: var(--border-active); }
-
-    .totals-bar {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 12px 16px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-    }
-    .totals-label {
-      font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
-      color: var(--text-3); font-family: var(--mono); margin-right: 4px;
-    }
-    .totals-item {
-      display: flex; align-items: baseline; gap: 6px;
-    }
-    .totals-item .t-val {
-      font-size: 15px; font-weight: 700; font-family: var(--mono); color: var(--text);
-    }
-    .totals-item .t-lbl {
-      font-size: 10px; color: var(--text-3); font-family: var(--mono);
-    }
-    .totals-sep { width: 1px; height: 16px; background: var(--border); }
-
-    .view-toggle {
-      display: flex;
-      gap: 2px;
-      margin-left: 6px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 3px;
-    }
-    .view-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-3);
-      font-size: 15px;
-      width: 28px; height: 28px;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: all .15s;
-    }
-    .view-btn.active { background: var(--ram-red); color: white; }
-    .view-btn:not(.active):hover { background: var(--bg-hover); color: var(--text-2); }
-
-    .calendar-view { margin-bottom: 1.5rem; }
-
-    .cal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.25rem;
-    }
-    .cal-month-label {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      color: var(--text);
-      font-family: var(--sans);
-    }
-    .cal-nav {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      color: var(--text-2);
-      width: 34px; height: 34px;
-      border-radius: var(--r);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all .15s;
-    }
-    .cal-nav:hover { border-color: var(--ram-red); color: var(--text); }
-
-    .cal-grid-head {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      margin-bottom: 6px;
-    }
-    .cal-grid-head span {
-      text-align: center;
-      font-size: 10px;
-      font-family: var(--mono);
-      font-weight: 600;
-      color: var(--text-3);
-      letter-spacing: 1.2px;
-      padding: 4px 0;
-    }
-
-    .cal-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-    }
-
-    .cal-cell {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      min-height: 80px;
-      padding: 8px 7px 6px;
-      cursor: default;
-      transition: border-color .15s;
-      position: relative;
-      overflow: hidden;
-    }
-    .cal-cell.has-activity { cursor: pointer; }
-    .cal-cell.has-activity:hover { border-color: var(--border-active); background: var(--bg-hover); }
-    .cal-cell.is-today { border-color: var(--ram-red); }
-    .cal-cell.is-today .cal-cell-day { color: var(--ram-red); font-weight: 700; }
-    .cal-cell.selected-day { border-color: var(--ram-red); background: var(--ram-red-dim); }
-    .cal-cell.other-month { opacity: 0.3; }
-
-    .cal-cell-day {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-2);
-      font-family: var(--mono);
-      margin-bottom: 5px;
-      display: block;
-    }
-
-    .cal-pill {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 10px;
-      font-family: var(--mono);
-      font-weight: 600;
-      padding: 2px 5px;
-      border-radius: 4px;
-      margin-bottom: 3px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-    }
-    .cal-pill i { font-size: 10px; flex-shrink: 0; }
-    .cal-pill.flight   { background: var(--blue-dim);               color: var(--blue); }
-    .cal-pill.standby  { background: var(--amber-dim);              color: var(--amber); }
-    .cal-pill.training { background: var(--green-dim);              color: var(--green); }
-    .cal-pill.other    { background: rgba(255,255,255,0.06);        color: var(--text-2); }
-    .cal-pill-more {
-      font-size: 9px; color: var(--text-3); font-family: var(--mono);
-      margin-top: 1px;
-    }
-
-    .cal-day-panel {
-      margin-top: 12px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      overflow: hidden;
-      animation: slideDown .18s ease;
-    }
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .cal-day-panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-    }
-    .cal-day-title {
-      font-size: 11px;
-      font-family: var(--mono);
-      font-weight: 600;
-      color: var(--text-3);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .cal-day-count {
-      font-size: 11px;
-      font-family: var(--mono);
-      color: var(--text-3);
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 2px 8px;
-    }
-    #calDayCards { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-
-    .day-card {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-      transition: border-color .15s;
-    }
-    .day-card:hover { border-color: var(--border-active); }
-    .day-card-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 13px;
-      cursor: pointer;
-    }
-    .day-card-route {
-      flex: 1;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .day-card-time {
-      font-size: 11px;
-      color: var(--text-3);
-      font-family: var(--mono);
-      white-space: nowrap;
-    }
-    .day-card-dur {
-      font-size: 11px;
-      color: var(--text-2);
-      font-family: var(--mono);
-      font-weight: 600;
-    }
-
-    @media (max-width: 640px) {
-      .cal-cell { min-height: 58px; padding: 5px 4px; }
-      .cal-cell-day { font-size: 11px; }
-      .cal-pill { font-size: 9px; padding: 1px 4px; }
-      .cal-month-label { font-size: 16px; }
-    }
-
-    #toastContainer {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 99999;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      pointer-events: none;
-    }
-    .toast {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      background: #0f2018;
-      border: 1px solid rgba(93,184,122,0.4);
-      border-left: 3px solid var(--green);
-      border-radius: 10px;
-      padding: 13px 16px;
-      min-width: 280px;
-      max-width: 360px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(93,184,122,0.1);
-      pointer-events: all;
-      animation: toastIn .3s cubic-bezier(.2,.8,.4,1) forwards;
-      position: relative;
-      overflow: hidden;
-    }
-    .toast::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at top left, rgba(93,184,122,0.07), transparent 60%);
-      pointer-events: none;
-    }
-    .toast.hide {
-      animation: toastOut .3s ease forwards;
-    }
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateX(30px) scale(0.95); }
-      to   { opacity: 1; transform: translateX(0) scale(1); }
-    }
-    @keyframes toastOut {
-      from { opacity: 1; transform: translateX(0) scale(1); }
-      to   { opacity: 0; transform: translateX(30px) scale(0.95); }
-    }
-    .toast-icon {
-      width: 32px; height: 32px;
-      background: var(--green-dim);
-      border: 1px solid rgba(93,184,122,0.3);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      font-size: 16px;
-      color: var(--green);
-    }
-    .toast-body { flex: 1; min-width: 0; }
-    .toast-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--green);
-      letter-spacing: 0.3px;
-      margin-bottom: 3px;
-      font-family: var(--sans);
-    }
-    .toast-msg {
-      font-size: 12px;
-      color: var(--text-2);
-      font-family: var(--mono);
-      line-height: 1.4;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .toast-time {
-      font-size: 10px;
-      color: var(--text-3);
-      font-family: var(--mono);
-      margin-top: 4px;
-    }
-    .toast-close {
-      background: none;
-      border: none;
-      color: var(--text-3);
-      cursor: pointer;
-      font-size: 14px;
-      padding: 0;
-      flex-shrink: 0;
-      line-height: 1;
-      transition: color .15s;
-    }
-    .toast-close:hover { color: var(--text); }
-    .toast-progress {
-      position: absolute;
-      bottom: 0; left: 0;
-      height: 2px;
-      background: var(--green);
-      opacity: 0.5;
-      animation: toastProgress 4s linear forwards;
-    }
-    @keyframes toastProgress {
-      from { width: 100%; }
-      to   { width: 0%; }
-    }
-
-    .activity-card.urgent-flight {
-      border-color: rgba(232,168,64,0.45);
-      background: linear-gradient(135deg, #13161b 0%, #1a1608 100%);
-      box-shadow: 0 0 0 1px rgba(232,168,64,0.15), 0 4px 16px rgba(232,168,64,0.08);
+    /* Next Flight Global Pulse Highlight Layout */
+    .activity-card.next-flight-highlight {
+      border-color: #e8a840 !important;
+      background: linear-gradient(135deg, #13161b 0%, #1e1708 100%) !important;
+      box-shadow: 0 0 18px rgba(232,168,64,0.15);
       position: relative;
     }
-    .activity-card.urgent-flight::before {
+    .activity-card.next-flight-highlight::before {
       content: '';
       position: absolute;
       top: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--amber), rgba(232,168,64,0.2));
-      border-radius: 10px 10px 0 0;
+      height: 3px;
+      background: linear-gradient(90deg, #e8a840, transparent);
     }
-    .activity-card.urgent-flight .card-header:hover {
-      background: rgba(232,168,64,0.04);
-    }
-    .urgent-badge {
+    .next-flight-badge {
       display: inline-flex;
       align-items: center;
       gap: 4px;
       font-size: 9px;
       font-weight: 700;
-      padding: 2px 7px;
+      padding: 2px 6px;
       border-radius: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
+      background: rgba(232,168,64,0.15);
+      color: #e8a840;
+      border: 1px solid rgba(232,168,64,0.2);
       font-family: var(--mono);
-      background: var(--amber-dim);
-      color: var(--amber);
-      border: 1px solid rgba(232,168,64,0.25);
-      flex-shrink: 0;
-      animation: urgentPulse 2s ease-in-out infinite;
+      animation: flash 2s infinite ease-in-out;
     }
-    .urgent-badge i { font-size: 9px; }
-    @keyframes urgentPulse {
-      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(232,168,64,0.3); }
-      50% { opacity: 0.85; box-shadow: 0 0 0 4px rgba(232,168,64,0); }
-    }
-    .urgent-countdown {
-      font-size: 10px;
-      color: var(--amber);
+    @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+    .countdown-timer {
+      font-size: 11px;
       font-family: var(--mono);
+      color: #e8a840;
       font-weight: 600;
-      white-space: nowrap;
-      flex-shrink: 0;
+      background: rgba(0,0,0,0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
     }
+
+    .empty-state { text-align: center; padding: 5rem 1rem; color: var(--text-3); }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+
+    .card-select-cb {
+      width: 16px; height: 16px;
+      border-radius: 4px;
+      border: 1.5px solid var(--border-active);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .activity-card.selected { border-color: var(--ram-red); background: rgba(200,16,46,0.02); }
+    .activity-card.selected .card-select-cb { background: var(--ram-red); border-color: var(--ram-red); }
+    .card-select-cb i { font-size: 11px; color: white; opacity: 0; }
+    .activity-card.selected .card-select-cb i { opacity: 1; }
+
+    .selection-bar {
+      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+      z-index: 100; display: flex; align-items: center; gap: 10px;
+      background: var(--bg-card); border: 1px solid var(--border-active);
+      border-radius: 12px; padding: 10px 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+    .selection-bar.invisible { display: none; }
+    .btn-sel { padding: 6px 12px; border-radius: var(--r); border: none; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-sel-csv { background: var(--green-dim); color: var(--green); }
+    .btn-sel-ical { background: var(--blue-dim); color: var(--blue); }
+
+    .totals-bar { display: flex; gap: 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r); padding: 12px 16px; margin-top: 12px; }
+    .totals-item { display: flex; gap: 6px; font-family: var(--mono); font-size: 13px; }
+    .totals-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; }
   </style>
 </head>
 <body>
 
-  <div id="toastContainer"></div>
-
   <div id="pinOverlay" class="pin-overlay">
     <div class="pin-box">
       <div class="logo-container">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Royal_Air_Maroc_Logo.svg/1280px-Royal_Air_Maroc_Logo.svg.png" alt="Royal Air Maroc Logo">
+        <img src="https://worldvectorlogo.com/download/royal-air-maroc-logo.svg" alt="Royal Air Maroc" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Royal_Air_Maroc_Logo.svg/320px-Royal_Air_Maroc_Logo.svg.png'">
       </div>
       <h2>Secure Access</h2>
       <p>Enter the gatekeeper decryption pass key.</p>
       
       <div class="pin-input-wrapper">
-        <input type="password" id="pinInput" maxlength="6" placeholder="••••••" readonly autocomplete="off">
+        <input type="password" id="pinInput" maxlength="6" placeholder="•••••" readonly>
       </div>
       
       <div id="errorMsg" class="error-msg hidden">Decryption footprint failure. Access Denied.</div>
@@ -1043,83 +492,51 @@
   <div class="app" id="appContainer">
     <div class="header">
       <div class="header-logo-container">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Royal_Air_Maroc_Logo.svg/1280px-Royal_Air_Maroc_Logo.svg.png" alt="Royal Air Maroc Logo">
+        <img src="https://worldvectorlogo.com/download/royal-air-maroc-logo.svg" alt="Royal Air Maroc" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Royal_Air_Maroc_Logo.svg/320px-Royal_Air_Maroc_Logo.svg.png'">
       </div>
       <div class="header-text">
         <h1>RAM Crew Analytics Workspace</h1>
         <p id="crewLabel">Sync Status: Offline</p>
       </div>
-      <button class="btn hidden" id="icalBtn" onclick="exportIcal()"><i class="ti ti-download"></i>Full iCal</button>
       <button class="btn" id="refreshBtn" onclick="refreshRoster()"><i class="ti ti-refresh"></i>Refresh</button>
     </div>
 
-    <div class="stats-grid hidden" id="statsGrid">
+    <div class="stats-grid" id="statsGrid">
       <div class="stat"><div class="stat-label">Flights</div><div class="stat-value" id="statFlights">0</div></div>
       <div class="stat"><div class="stat-label">Duties</div><div class="stat-value" id="statDuties">0</div></div>
       <div class="stat"><div class="stat-label">Reserve</div><div class="stat-value" id="statStandby">0</div></div>
       <div class="stat"><div class="stat-label">Training</div><div class="stat-value" id="statTraining">0</div></div>
     </div>
 
-    <div id="filterBar" class="filters hidden">
+    <div id="filterBar" class="filters">
       <span class="filters-label">Show:</span>
       <button class="filter-btn active" data-filter="all">All</button>
       <button class="filter-btn" data-filter="flight">Flights</button>
       <button class="filter-btn" data-filter="standby">Reserve</button>
       <button class="filter-btn" data-filter="training">Training</button>
-      <button class="filter-btn" data-filter="other">Other</button>
       
       <select id="monthSelect" class="select-month">
         <option value="all">All Months</option>
       </select>
-
-      <div class="view-toggle">
-        <button class="view-btn active" id="btnListView" onclick="setView('list')" title="List view"><i class="ti ti-layout-list"></i></button>
-        <button class="view-btn" id="btnCalView" onclick="setView('calendar')" title="Calendar view"><i class="ti ti-calendar-month"></i></button>
-      </div>
     </div>
 
     <div id="activityList" class="activity-list">
       <div class="empty-state" id="loadingState">
         <i class="ti ti-loader spin"></i>
         <p>Synchronizing Live Roster File</p>
-        <span>Pulling background data layers...</span>
       </div>
     </div>
 
-    <div id="calendarView" class="calendar-view hidden">
-      <div class="cal-header">
-        <button class="cal-nav" id="calPrev" onclick="calNav(-1)"><i class="ti ti-chevron-left"></i></button>
-        <span class="cal-month-label" id="calMonthLabel"></span>
-        <button class="cal-nav" id="calNext" onclick="calNav(1)"><i class="ti ti-chevron-right"></i></button>
-      </div>
-      <div class="cal-grid-head">
-        <span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span>
-      </div>
-      <div class="cal-grid" id="calGrid"></div>
-      
-      <div id="calDayPanel" class="cal-day-panel hidden">
-        <div class="cal-day-panel-header">
-          <span id="calDayTitle" class="cal-day-title"></span>
-          <span id="calDayCount" class="cal-day-count"></span>
-        </div>
-        <div id="calDayCards"></div>
-      </div>
-    </div>
-
-    <div id="totalsBar" class="totals-bar hidden">
+    <div id="totalsBar" class="totals-bar">
       <span class="totals-label">Totals</span>
-      <div class="totals-item"><span class="t-val" id="totHours">—</span><span class="t-lbl">Block hrs</span></div>
-      <div class="totals-sep"></div>
-      <div class="totals-item"><span class="t-val" id="totDuty">—</span><span class="t-lbl">Duty hrs</span></div>
-      <div class="totals-sep"></div>
-      <div class="totals-item"><span class="t-val" id="totFlights">—</span><span class="t-lbl">Flights</span></div>
+      <div class="totals-item"><span id="totHours" style="font-weight:700;">—</span><span>Block hrs</span></div>
+      <div class="totals-item"><span id="totFlights" style="font-weight:700;">—</span><span>Flights</span></div>
     </div>
 
     <div id="selectionBar" class="selection-bar invisible">
-      <div class="sel-count"><span id="selCountText">Selected: <strong>0</strong></span></div>
-      <button class="btn-sel btn-sel-ical" onclick="exportSelectedIcal()"><i class="ti ti-download"></i>Export iCal</button>
-      <button class="btn-sel btn-sel-csv" onclick="exportSelectedCsv()"><i class="ti ti-file-text"></i>Export CSV</button>
-      <button class="btn-sel btn-sel-clear" onclick="clearSelection()">Clear</button>
+      <button class="btn-sel btn-sel-ical" onclick="exportSelectedIcal()">Export Selected iCal</button>
+      <button class="btn-sel btn-sel-csv" onclick="exportSelectedCsv()">Export Selected CSV</button>
+      <button class="btn-sel" style="background:transparent; color:var(--text-3);" onclick="clearSelection()">Clear</button>
     </div>
   </div>
 
@@ -1135,821 +552,227 @@
 
     let allCards = [];
     let selectedIds = new Set();
-    let rosterData = null;
     let cardIdCounter = 0;
     let currentFilter = 'all';
     let currentMonthFilter = 'all';
-    let knownFlightKeys = new Set();
-    let urgentTimers = [];
+    let countdownInterval = null;
 
-    // Global Key Listener for Keypad Compatibility fallback options
-    document.addEventListener('keydown', (e) => {
-      if (pinOverlay.classList.contains('hidden')) return;
-      errorMsg.classList.add('hidden');
-      if (e.key >= '0' && e.key <= '9') {
-        pressKey(e.key);
-      } else if (e.key === 'Backspace') {
-        pressDelete();
-      } else if (e.key === 'Escape' || e.key === 'Delete') {
-        pressClear();
-      } else if (e.key === 'Enter') {
-        verifyPinCode();
-      }
-    });
+    // Numerical keypad events input logic
+    function pressKey(num) { errorMsg.classList.add('hidden'); if(pinInput.value.length < 6) pinInput.value += num; }
+    function pressDelete() { errorMsg.classList.add('hidden'); pinInput.value = pinInput.value.slice(0, -1); }
+    function pressClear() { errorMsg.classList.add('hidden'); pinInput.value = ''; }
 
-    // Filtering system initialization listeners 
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentFilter = btn.dataset.filter;
-        renderFiltered();
-      });
-    });
-
-    monthSelect.addEventListener('change', (e) => {
-      currentMonthFilter = e.target.value;
-      renderFiltered();
-    });
-
-    function toggleCard(bodyEl, chevEl) {
-      bodyEl.classList.toggle('open');
-      chevEl.classList.toggle('open');
-    }
-
-    function toggleSelect(event, cardId, cardEl) {
-      event.stopPropagation();
-      if (selectedIds.has(cardId)) {
-        selectedIds.delete(cardId);
-        cardEl.classList.remove('selected');
-      } else {
-        selectedIds.add(cardId);
-        cardEl.classList.add('selected');
-      }
-      updateSelectionBar();
-    }
-
-    function updateSelectionBar() {
-      const count = selectedIds.size;
-      document.getElementById('selCountText').innerHTML = `Selected: <strong>${count}</strong>`;
-      if (count > 0 && currentView === 'list') {
-        selectionBar.classList.remove('invisible');
-      } else {
-        selectionBar.classList.add('invisible');
-      }
-    }
-
-    function clearSelection() {
-      selectedIds.forEach(id => {
-        const card = allCards.find(c => c.el.dataset.id == id);
-        if (card) card.el.classList.remove('selected');
-      });
-      selectedIds.clear();
-      updateSelectionBar();
-    }
-
-    function getSelectedCards() {
-      return allCards.filter(c => selectedIds.has(+c.el.dataset.id));
-    }
-
-    function pressKey(num) {
-      errorMsg.classList.add('hidden');
-      if (pinInput.value.length < 6) pinInput.value += num;
-    }
-
-    function pressDelete() {
-      errorMsg.classList.add('hidden');
-      pinInput.value = pinInput.value.slice(0, -1);
-    }
-
-    function pressClear() {
-      errorMsg.classList.add('hidden');
-      pinInput.value = '';
-    }
-
-    // Hash tracking parameters 
+    // SHA-256 Gatekeeper Protection Code footprint tracking verification
     const CORRECT_PIN_HASH = "599d1db9da4631903b0c74ea64d598dead94905690b47ef7b03ed2c6a470de3c";
-
     async function hashPin(pin) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(pin);
+      const encoder = new TextEncoder(); const data = encoder.encode(pin);
       const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     async function verifyPinCode() {
-      const entered = pinInput.value;
-      const enteredHash = await hashPin(entered);
-      if (enteredHash === CORRECT_PIN_HASH) {
-        errorMsg.classList.add('hidden');
+      if (await hashPin(pinInput.value) === CORRECT_PIN_HASH) {
         pinOverlay.classList.add('hidden');
         appContainer.style.display = 'block';
         initializeRosterSync();
       } else {
-        errorMsg.classList.remove('hidden');
-        pinInput.value = '';
+        errorMsg.classList.remove('hidden'); pinInput.value = '';
       }
     }
+
+    // Initialization listeners for action filters
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active'); currentFilter = btn.dataset.filter; renderFiltered();
+      });
+    });
+    monthSelect.addEventListener('change', (e) => { currentMonthFilter = e.target.value; renderFiltered(); });
+
+    function toggleCard(bodyEl, chevEl) { bodyEl.classList.toggle('open'); chevEl.classList.toggle('open'); }
+    
+    function toggleSelect(event, cardId, cardEl) {
+      event.stopPropagation();
+      if(selectedIds.has(cardId)) { selectedIds.delete(cardId); cardEl.classList.remove('selected'); }
+      else { selectedIds.add(cardId); cardEl.classList.add('selected'); }
+      selectionBar.classList.toggle('invisible', selectedIds.size === 0);
+    }
+    
+    function clearSelection() {
+      selectedIds.clear(); document.querySelectorAll('.activity-card').forEach(c => c.classList.remove('selected'));
+      selectionBar.classList.add('invisible');
+    }
+
+    function classifyActivity(act) {
+      const subs = act.activities || []; if(subs.some(s => s.type === 'flight-leg')) return 'flight';
+      const code = (act.activityCode?.id || '').toUpperCase();
+      if(code.startsWith('RSR') || code.startsWith('SBY') || code.includes('STB')) return 'standby';
+      if(code.startsWith('SIM') || code.startsWith('TRN') || code.includes('INST')) return 'training';
+      return 'other';
+    }
+
+    // Parsing helpers
+    function fmtDate(iso) { if(!iso) return '--'; const d = new Date(iso); const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return d.getUTCDate().toString().padStart(2,'0') + ' ' + M[d.getUTCMonth()]; }
+    function fmtTime(iso) { if(!iso) return '--'; const d = new Date(iso); return d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0'); }
+    function fmtDateTime(iso) { if(!iso) return '--'; return fmtDate(iso) + ' ' + fmtTime(iso); }
+    function fmtDuration(mins) { if(!mins) return '0:00h'; return Math.floor(mins/60) + ':' + (mins%60).toString().padStart(2,'0') + 'h'; }
 
     async function initializeRosterSync() {
       try {
         const response = await fetch('roster.json');
-        if (response.ok) {
-          const data = await response.json();
-          const entity = data.entity || data;
-          (entity.activities || []).forEach(act => {
-            if (classifyActivity(act) === 'flight') {
-              knownFlightKeys.add(act.startTime + '|' + (act.startStation||'') + '|' + (act.endStation||''));
-            }
-          });
-          renderRoster(data);
-        } else {
-          showErrorState();
-        }
-      } catch {
-        showErrorState();
-      }
-    }
-
-    function showErrorState() {
-      activityList.innerHTML = '<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Roster Sync Failed</p><span>Verify that roster.json rests securely in root.</span></div>';
-    }
-
-    async function refreshRoster() {
-      const btn = document.getElementById('refreshBtn');
-      const icon = btn.querySelector('i');
-      icon.classList.add('spin');
-      btn.disabled = true;
-
-      allCards = [];
-      selectedIds.clear();
-      rosterData = null;
-      cardIdCounter = 0;
-      urgentTimers.forEach(clearInterval);
-      urgentTimers = [];
-
-      try {
-        const response = await fetch('roster.json');
-        if (response.ok) {
-          const data = await response.json();
-          renderRoster(data);
-          showToast("Sync Completed", "Live updates interleaved successfully.");
-        } else {
-          showErrorState();
-        }
-      } catch {
-        showErrorState();
-      } finally {
-        icon.classList.remove('spin');
-        btn.disabled = false;
-        updateSelectionBar();
-      }
-    }
-
-    function showToast(title, msg) {
-      const container = document.getElementById('toastContainer');
-      const t = document.createElement('div');
-      t.className = 'toast';
-      t.innerHTML = `
-        <div class="toast-icon"><i class="ti ti-circle-check"></i></div>
-        <div class="toast-body">
-          <div class="toast-title">${title}</div>
-          <div class="toast-msg">${msg}</div>
-        </div>
-        <button class="toast-close" onclick="this.parentElement.remove()"><i class="ti ti-x"></i></button>
-        <div class="toast-progress"></div>
-      `;
-      container.appendChild(t);
-      setTimeout(() => { t.classList.add('hide'); setTimeout(() => t.remove(), 300); }, 4000);
-    }
-
-    function fmtDateTime(iso) {
-      if (!iso) return '--';
-      const d = new Date(iso);
-      const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      return d.getUTCDate().toString().padStart(2,'0') + ' ' + M[d.getUTCMonth()] + ' ' + d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
-    }
-
-    function fmtTime(iso) {
-      if (!iso) return '--';
-      const d = new Date(iso);
-      return d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
-    }
-
-    function fmtDate(iso) {
-      if (!iso) return '--';
-      const d = new Date(iso);
-      const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      return d.getUTCDate().toString().padStart(2,'0') + ' ' + M[d.getUTCMonth()];
-    }
-
-    function fmtDuration(mins) {
-      if (!mins && mins !== 0) return '--';
-      return Math.floor(mins/60) + ':' + (mins%60).toString().padStart(2,'0') + 'h';
-    }
-
-    function csvDate(iso) {
-      if (!iso) return '';
-      const d = new Date(iso);
-      return d.getUTCDate().toString().padStart(2,'0') + '/' + (d.getUTCMonth()+1).toString().padStart(2,'0') + '/' + d.getUTCFullYear();
-    }
-
-    function csvTime(iso) {
-      if (!iso) return '';
-      const d = new Date(iso);
-      return d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
-    }
-
-    function fmtHoursDecimal(mins) {
-      if (!mins) return '0:00h';
-      return Math.floor(mins/60) + ':' + (mins%60).toString().padStart(2,'0') + 'h';
-    }
-
-    function avClass(pos) {
-      const p = (pos||'').toUpperCase();
-      if (p === 'CDB') return 'av-cdb';
-      if (p === 'OPL') return 'av-opl';
-      if (p.startsWith('CA')) return 'av-ca';
-      if (p === 'CC') return 'av-cc';
-      if (p === 'EP') return 'av-ep';
-      if (p === 'EF') return 'av-ef';
-      return 'av-other';
-    }
-
-    function ini(g, s) {
-      return (((g||'')[0]||'') + ((s||'')[0]||'')).toUpperCase();
-    }
-
-    function classifyActivity(act) {
-      const subs = act.activities || [];
-      if (subs.some(s => s.type === 'flight-leg')) return 'flight';
-      const code = (act.activityCode?.id || '').toUpperCase();
-      if (code.startsWith('RSR') || code.startsWith('SBY') || code.includes('STB')) return 'standby';
-      if (code.startsWith('SIM') || code.startsWith('TRN') || code.includes('INST')) return 'training';
-      return 'other';
-    }
-
-    function buildCrewHTML(crewArray, trnTags = []) {
-      if (!crewArray || !crewArray.length) return '';
-      let html = '<div class="crew-grid">';
-      crewArray.forEach(c => {
-        const pos = c.position?.id || c.position || 'FA';
-        const cl = avClass(pos);
-        const name = c.givenNames + ' ' + c.surname;
-        const init = ini(c.givenNames, c.surname);
-        const tags = trnTags.filter(t => t.crewId === c.crewId).map(t => `<span class="trn-badge trn-${t.role}">${t.role}</span>`).join('');
-        html += `
-          <div class="crew-pill">
-            <div class="crew-avatar ${cl}">${init}</div>
-            <div class="crew-name">${name} <span class="crew-meta">${pos} · ${c.crewId || '—'}</span>${tags}</div>
-          </div>`;
-      });
-      return html + '</div>';
+        if (response.ok) { renderRoster(await response.json()); }
+        else { document.getElementById('activityList').innerHTML = '<div class="empty-state"><p>Roster context file missing</p></div>'; }
+      } catch { document.getElementById('activityList').innerHTML = '<div class="empty-state"><p>Sync failed error layer</p></div>'; }
     }
 
     function renderRoster(data) {
-      rosterData = data;
-      document.getElementById('icalBtn').classList.remove('hidden');
-      const entity = data.entity || data;
-      const activities = entity.activities || [];
-      const crewId = entity.crewId || '';
+      const entity = data.entity || data; const activities = entity.activities || [];
+      document.getElementById('crewLabel').textContent = `Crew ID: ${entity.crewId || 'RAM'} · Total Operations: ${activities.length}`;
       
-      document.getElementById('crewLabel').textContent = crewId ? 'Crew ID: ' + crewId + ' · ' + activities.length + ' activities' : activities.length + ' activities loaded';
-      document.getElementById('statsGrid').classList.remove('hidden');
-      document.getElementById('filterBar').classList.remove('hidden');
-      
-      allCards = [];
-      const uniqueMonths = new Set();
+      allCards = []; const uniqueMonths = new Set();
       const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
+      // Process raw metrics
       activities.forEach(act => {
         const type = classifyActivity(act);
         const actDate = new Date(act.startTime);
         const monthKey = actDate.getUTCFullYear() + '-' + (actDate.getUTCMonth()+1).toString().padStart(2,'0');
-        const monthLabel = monthNames[actDate.getUTCMonth()] + ' ' + actDate.getUTCFullYear();
-        uniqueMonths.add(JSON.stringify({key: monthKey, label: monthLabel}));
+        uniqueMonths.add(JSON.stringify({key: monthKey, label: monthNames[actDate.getUTCMonth()] + ' ' + actDate.getUTCFullYear()}));
 
-        const subs = act.activities || [];
-        const flightLegs = subs.filter(s => s.type === 'flight-leg');
-        const role = act.key?.role || '';
-        const blockMins = flightLegs.reduce((acc, l) => acc + (l.blockTimeMinutes || l.durationMinutes || 0), 0);
-
+        const subs = act.activities || []; const legs = subs.filter(s => s.type === 'flight-leg');
+        const blockMins = legs.reduce((acc, l) => acc + (l.blockTimeMinutes || l.durationMinutes || 0), 0);
         let routeText = act.startStation + ' → ' + act.endStation;
-        if (flightLegs.length > 1) {
-          const stops = [...new Set(flightLegs.map(l => l.startStation))];
-          stops.push(flightLegs[flightLegs.length-1].endStation);
-          routeText = stops.join(' → ');
-        }
+        if (legs.length > 1) { routeText = legs.map(l => l.startStation).join(' → ') + ' → ' + legs[legs.length-1].endStation; }
 
-        const SKIP = new Set(['briefing', 'debriefing']);
-        let timelineHTML = '<div class="section-label">Timeline</div><div class="timeline">';
-        
-        subs.filter(s => !SKIP.has(s.type)).forEach(s => {
-          const st = fmtDateTime(s.startTime);
-          const et = fmtDateTime(s.endTime);
-          const dur = fmtDuration(s.durationMinutes);
-          
-          if (s.type === 'flight-leg') {
-            const fn = (s.carrier||'') + (s.flightNumber || s.activityCode?.id || '');
-            const acType = s.aircraftType || '';
-            const tail = s.aircraftRegistration || '';
-            const bTime = fmtDuration(s.blockTimeMinutes);
-            const dTag = s.delayMinutesDepart > 15 ? `<span class="delay-tag late">+${s.delayMinutesDepart}m Del</span>` : (s.delayMinutesDepart !== undefined ? '<span class="delay-tag">ON TIME</span>' : '');
-            
+        let timelineHTML = '<div class="section-label">Timeline Details</div><div class="timeline">';
+        subs.forEach(s => {
+          if(s.type === 'flight-leg') {
+            const fn = (s.carrier||'') + (s.flightNumber || '');
             timelineHTML += `
               <div class="tl-row flight-row">
-                <div class="tl-type"><span class="fn-tag">${fn}</span><br><span class="tl-date">${acType}</span></div>
-                <div>
-                  <div class="tl-label">${s.startStation} → ${s.endStation} ${dTag}</div>
-                  <div class="tl-sublabel">Block: ${bTime} · Tail: ${tail || '—'}</div>
-                  ${buildCrewHTML(s.assignedCrew, s.trainingTags)}
-                </div>
-                <div class="tl-time">${st}<br>${et}</div>
-              </div>`;
-          } else if (s.type === 'layover') {
-            timelineHTML += `
-              <div class="tl-row layover-row">
-                <div class="tl-type tl-type--layover">LAYOVER</div>
-                <div>
-                  <div class="tl-label">${s.startStation}</div>
-                  <div class="tl-sublabel">Duration Room Allocation Rest: ${dur}</div>
-                </div>
-                <div class="tl-time">${st}<br>${et}</div>
+                <div class="tl-type"><span class="fn-tag">${fn}</span><br>${s.aircraftType||''}</div>
+                <div><div class="tl-label">${s.startStation} → ${s.endStation}</div><div class="tl-sublabel">Block: ${fmtDuration(s.blockTimeMinutes)}</div></div>
+                <div class="tl-time">${fmtTime(s.startTime)}<br>${fmtTime(s.endTime)}</div>
               </div>`;
           } else {
-            const code = s.activityCode?.id || s.type;
-            const desc = s.activityCode?.description || '';
             timelineHTML += `
               <div class="tl-row gt-row">
-                <div class="tl-type tl-type--ground">${code}</div>
-                <div>
-                  <div class="tl-label">${s.startStation}${s.endStation !== s.startStation ? ' → '+s.endStation : ''}</div>
-                  ${desc ? '<div class="tl-sublabel">'+desc+' · '+dur+'</div>' : ''}
-                  ${buildCrewHTML(s.assignedCrew, s.trainingTags)}
-                </div>
-                <div class="tl-time">${st}<br>${et}</div>
+                <div class="tl-type">${s.activityCode?.id || s.type}</div>
+                <div><div class="tl-label">${s.startStation}</div><div class="tl-sublabel">${s.activityCode?.description || ''}</div></div>
+                <div class="tl-time">${fmtTime(s.startTime)}<br>${fmtTime(s.endTime)}</div>
               </div>`;
           }
         });
         timelineHTML += '</div>';
 
         const badgeClass = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' }[type];
+        // Enforced explicit structural naming constraints
         const badgeLabel = { flight:'Flight', standby:'Reserve', training:'Training', other:'Duty' }[type];
 
         const cardId = ++cardIdCounter;
         const card = document.createElement('div');
         card.className = 'activity-card';
-        card.dataset.type = type;
-        card.dataset.month = monthKey;
         card.dataset.id = cardId;
-
-        const now = Date.now();
-        const depMs = new Date(act.startTime).getTime();
-        const msUntil = depMs - now;
-        const isUrgent = type === 'flight' && msUntil > 0 && msUntil < 86400000;
-
-        if (isUrgent) {
-          card.classList.add('urgent-flight');
-          function fmtCountdown(ms) {
-            const totalSec = Math.max(0, Math.floor(ms / 1000));
-            const h = Math.floor(totalSec / 3600);
-            const m = Math.floor((totalSec % 3600) / 60);
-            return h + 'h ' + m.toString().padStart(2,'0') + 'm';
-          }
-          
-          const timer = setInterval(() => {
-            const currentMs = depMs - Date.now();
-            const el = document.getElementById(`countdown-${cardId}`);
-            if (el) {
-              if (currentMs <= 0) {
-                el.textContent = "Departed";
-                clearInterval(timer);
-              } else {
-                el.textContent = fmtCountdown(currentMs);
-              }
-            }
-          }, 60000);
-          urgentTimers.push(timer);
-        }
-
-        const urgentBadgeHTML = isUrgent ? `<span class="urgent-badge"><i class="ti ti-clock-exclamation"></i> &lt;24H</span> <span class="urgent-countdown" id="countdown-${cardId}">${Math.floor(msUntil/3600000)}h ${Math.floor((msUntil%3600000)/60000).toString().padStart(2,'0')}m</span>` : '';
 
         card.innerHTML = `
           <div class="card-header" onclick="toggleCard(this.nextElementSibling, this.querySelector('.card-chevron'))">
-            <div class="card-select-cb" onclick="toggleSelect(event, ${cardId}, this.parentElement.parentElement)">
-              <i class="ti ti-check"></i>
-            </div>
+            <div class="card-select-cb" onclick="toggleSelect(event, ${cardId}, this.parentElement.parentElement)"><i class="ti ti-check"></i></div>
             <span class="type-badge ${badgeClass}">${badgeLabel}</span>
             <span class="card-date">${fmtDate(act.startTime)}</span>
-            <div class="card-route">${routeText} ${role ? `<span class="card-role">· ${role}</span>` : ''}</div>
-            ${urgentBadgeHTML}
+            <div class="card-route">${routeText}</div>
             <div class="card-time">${fmtTime(act.startTime)}–${fmtTime(act.endTime)}</div>
             <i class="ti ti-chevron-down card-chevron"></i>
           </div>
           <div class="card-body">
             <div class="detail-grid">
-              <div class="detail-item"><label>Report Time (UTC)</label><span>${fmtDateTime(act.startTime)}</span></div>
-              <div class="detail-item"><label>Release Time (UTC)</label><span>${fmtDateTime(act.endTime)}</span></div>
-              <div class="detail-item"><label>Total Duration</label><span>${fmtDuration(act.durationMinutes)}</span></div>
+              <div class="detail-item"><label>Report Time</label><span>${fmtDateTime(act.startTime)}</span></div>
+              <div class="detail-item"><label>Release Time</label><span>${fmtDateTime(act.endTime)}</span></div>
+              <div class="detail-item"><label>Duration</label><span>${fmtDuration(act.durationMinutes)}</span></div>
             </div>
             ${timelineHTML}
           </div>
         `;
 
-        allCards.push({
-          el: card,
-          act,
-          type,
-          month: monthKey,
-          durationMinutes: act.durationMinutes || 0,
-          blockMinutes: blockMins
-        });
+        allCards.push({ el: card, act, type, month: monthKey, startTime: new Date(act.startTime).getTime(), durationMinutes: act.durationMinutes, blockMinutes: blockMins });
       });
 
-      const sortedMonths = Array.from(uniqueMonths).map(m => JSON.parse(m)).sort((a,b) => a.key.localeCompare(b.key));
-      monthSelect.innerHTML = '<option value="all">All Months</option>';
-      sortedMonths.forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = m.key;
-        opt.textContent = m.label;
-        monthSelect.appendChild(opt);
+      // Build Month Selector options layout automatically
+      Array.from(uniqueMonths).map(m => JSON.parse(m)).sort((a,b)=>a.key.localeCompare(b.key)).forEach(m => {
+        const opt = document.createElement('option'); opt.value = m.key; opt.textContent = m.label; monthSelect.appendChild(opt);
       });
 
+      // Automatically determine and isolate the absolute NEXT FLIGHT from current system time matrix
+      calculateAndHighlightNextFlight();
       renderFiltered();
+    }
+
+    function calculateAndHighlightNextFlight() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      const now = Date.now();
+      
+      // Filter out upcoming flight structural events exclusively
+      const upcomingFlights = allCards.filter(c => c.type === 'flight' && c.startTime > now);
+      
+      if (upcomingFlights.length > 0) {
+        // Find the earliest starting item
+        upcomingFlights.sort((a, b) => a.startTime - b.startTime);
+        const nextFlight = upcomingFlights[0];
+        
+        nextFlight.el.classList.add('next-flight-highlight');
+        
+        // Dynamic inject layout components inside headers
+        const headerContainer = nextFlight.el.querySelector('.card-header');
+        const timeContainer = nextFlight.el.querySelector('.card-time');
+        
+        const badgeSpan = document.createElement('span');
+        badgeSpan.className = 'next-flight-badge';
+        badgeSpan.innerHTML = `<i class="ti ti-alert-circle"></i> NEXT FLIGHT`;
+        headerContainer.insertBefore(badgeSpan, timeContainer);
+
+        const countdownSpan = document.createElement('span');
+        countdownSpan.className = 'countdown-timer';
+        headerContainer.insertBefore(countdownSpan, timeContainer);
+
+        function updateTimer() {
+          const rem = nextFlight.startTime - Date.now();
+          if (rem <= 0) {
+            countdownSpan.textContent = "BOARDING / DEPARTED";
+            clearInterval(countdownInterval);
+          } else {
+            const h = Math.floor(rem / 3600000);
+            const m = Math.floor((rem % 3600000) / 60000);
+            countdownSpan.textContent = `T- ${h}h ${m.toString().padStart(2,'0')}m`;
+          }
+        }
+        updateTimer();
+        countdownInterval = setInterval(updateTimer, 60000);
+      }
     }
 
     function renderFiltered() {
       activityList.innerHTML = '';
       const visible = allCards.filter(c => {
-        const matchType = (currentFilter === 'all' || c.type === currentFilter);
-        const matchMonth = (currentMonthFilter === 'all' || c.month === currentMonthFilter);
-        return matchType && matchMonth;
+        return (currentFilter === 'all' || c.type === currentFilter) && (currentMonthFilter === 'all' || c.month === currentMonthFilter);
       });
 
-      if (!visible.length) {
-        activityList.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i><p>No activities match this filter</p></div>';
-        totalsBar.classList.add('hidden');
+      if(!visible.length) {
+        activityList.innerHTML = '<div class="empty-state"><p>No operations matched current query limits.</p></div>';
       } else {
         visible.forEach(c => activityList.appendChild(c.el));
-        updateTotals(visible);
-        if (currentView === 'list') totalsBar.classList.remove('hidden');
-      }
-      updateStats(visible);
-    }
-
-    function updateStats(visible) {
-      const fc = visible.filter(c => c.type === 'flight').length;
-      const dc = visible.filter(c => c.type === 'other').length;
-      const sc = visible.filter(c => c.type === 'standby').length;
-      const tc = visible.filter(c => c.type === 'training').length;
-      document.getElementById('statFlights').textContent = fc;
-      document.getElementById('statDuties').textContent = dc;
-      document.getElementById('statStandby').textContent = sc;
-      document.getElementById('statTraining').textContent = tc;
-    }
-
-    function updateTotals(visible) {
-      const totalDutyMins = visible.reduce((a,c) => a + c.durationMinutes, 0);
-      const totalBlockMins = visible.reduce((a,c) => a + c.blockMinutes, 0);
-      const totalFlights = visible.filter(c => c.type === 'flight').length;
-      document.getElementById('totHours').textContent = fmtHoursDecimal(totalBlockMins);
-      document.getElementById('totDuty').textContent = fmtHoursDecimal(totalDutyMins);
-      document.getElementById('totFlights').textContent = totalFlights;
-    }
-
-    function exportIcal() {
-      if (!rosterData) return;
-      const entity = rosterData.entity || rosterData;
-      _doExportIcal(entity.activities || [], entity.crewId || 'CREW');
-    }
-
-    function exportSelectedIcal() {
-      if (!rosterData) return;
-      const entity = rosterData.entity || rosterData;
-      const selActs = getSelectedCards().map(c => c.act);
-      if (!selActs.length) return;
-      _doExportIcal(selActs, entity.crewId || 'CREW', '_selected');
-    }
-
-    function _doExportIcal(activities, crewId, suffix = '') {
-      function icsDate(iso) {
-        if (!iso) return null;
-        const d = new Date(iso);
-        const pad = n => n.toString().padStart(2,'0');
-        return d.getUTCFullYear() + pad(d.getUTCMonth()+1) + pad(d.getUTCDate()) + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + '00Z';
-      }
-      function fold(line) {
-        const out = [];
-        while (line.length > 75) { out.push(line.slice(0,75)); line = ' ' + line.slice(75); }
-        out.push(line);
-        return out.join('\r\n');
-      }
-      function icsEscape(str) {
-        return (str||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
       }
 
-      const now = icsDate(new Date().toISOString());
-      let cal = [
-        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//RAM Roster Viewer//EN',
-        'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', fold('X-WR-CALNAME:RAM Roster – ' + crewId), 'X-WR-TIMEZONE:UTC'
-      ];
+      // Update counters blocks
+      document.getElementById('statFlights').textContent = allCards.filter(c=>c.type==='flight').length;
+      document.getElementById('statDuties').textContent = allCards.filter(c=>c.type==='other').length;
+      document.getElementById('statStandby').textContent = allCards.filter(c=>c.type==='standby').length;
+      document.getElementById('statTraining').textContent = allCards.filter(c=>c.type==='training').length;
 
-      activities.forEach(act => {
-        const type = classifyActivity(act);
-        const dtstart = icsDate(act.startTime);
-        const dtend = icsDate(act.endTime);
-        if (!dtstart || !dtend) return;
-
-        const subs = act.activities || [];
-        const legs = subs.filter(s => s.type === 'flight-leg');
-        const role = act.key?.role || '';
-        const uid = (act.startTime + act.endTime + (act.activityCode?.id || type) + crewId).replace(/[^A-Za-z0-9]/g, '') + '@royalairmaroc.com';
-
-        let summary = '[' + type.toUpperCase() + '] ' + act.startStation + ' → ' + act.endStation;
-        if (type === 'flight' && legs.length) {
-          summary = legs.map(l => (l.carrier||'') + (l.flightNumber||'')).join('/') + ' (' + legs.map(l => l.startStation + '-' + l.endStation).join(' ') + ')';
-        } else if (type !== 'flight') {
-          summary = '[' + (act.activityCode?.id || type).toUpperCase() + '] ' + (act.activityCode?.description || act.startStation || 'Duty');
-        }
-        if (role) summary += ' · ' + role;
-
-        let location = act.startStation || '';
-        let descParts = [];
-        if (act.activityCode?.description) descParts.push(act.activityCode.description);
-        descParts.push('Duration: ' + fmtDuration(act.durationMinutes));
-
-        if (type === 'flight' || type === 'training') {
-          const crewMap = new Map();
-          const collectCrew = (source) => {
-            (source.assignedCrew || []).forEach(c => {
-              const pos = (c.position?.id || c.position || '').toUpperCase();
-              if (pos === 'CDB' || pos === 'OPL') {
-                const key = c.crewId || (c.givenNames + c.surname);
-                if (!crewMap.has(key)) crewMap.set(key, { ...c, position: pos });
-              }
-            });
-          };
-          collectCrew(act);
-          subs.forEach(s => { collectCrew(s); (s.activities || []).forEach(ss => collectCrew(ss)); });
-          [...crewMap.values()].forEach(c => {
-            descParts.push(c.position + ': ' + c.givenNames + ' ' + c.surname + ' (' + c.crewId + ')');
-          });
-        }
-
-        cal.push('BEGIN:VEVENT');
-        cal.push(fold('UID:' + icsEscape(uid)));
-        cal.push('DTSTAMP:' + now);
-        cal.push('DTSTART:' + dtstart);
-        cal.push('DTEND:' + dtend);
-        cal.push(fold('SUMMARY:' + icsEscape(summary)));
-        if (location) cal.push(fold('LOCATION:' + icsEscape(location)));
-        if (descParts.length) cal.push(fold('DESCRIPTION:' + icsEscape(descParts.join('\n'))));
-        cal.push('END:VEVENT');
-      });
-
-      cal.push('END:VCALENDAR');
-      downloadBlob(cal.join('\r\n'), 'text/calendar;charset=utf-8', 'ram_roster_' + crewId + suffix + '.ics');
+      const totalBlock = visible.reduce((a,c)=>a+c.blockMinutes, 0);
+      document.getElementById('totHours').textContent = fmtDuration(totalBlock);
+      document.getElementById('totFlights').textContent = visible.filter(c=>c.type==='flight').length;
     }
 
-    function exportSelectedCsv() {
-      if (!rosterData) return;
-      const entity = rosterData.entity || rosterData;
-      const crewId = entity.crewId || 'CREW';
-      const cards = getSelectedCards();
-      if (!cards.length) return;
-
-      const csvEsc = v => '"' + String(v||'').replace(/"/g,'""') + '"';
-      const rows = [
-        ['Date', 'Flight Number', 'From', 'To', 'Sched Dep', 'Sched Arr', 'Actual Dep', 'Actual Arr', 'Entry Type', 'Aircraft', 'Registration', 'Block Time', 'Duty Time', 'Role']
-      ];
-
-      cards.forEach(c => {
-        const act = c.act;
-        const type = c.type;
-        const subs = act.activities || [];
-        const legs = subs.filter(s => s.type === 'flight-leg');
-        const role = act.key?.role || '';
-
-        if (type === 'flight' && legs.length) {
-          legs.forEach(l => {
-            rows.push([
-              csvDate(l.startTime),
-              (l.carrier||'') + (l.flightNumber||''),
-              l.startStation || '',
-              l.endStation || '',
-              csvTime(l.startTime),
-              csvTime(l.endTime),
-              csvTime(l.startTime),
-              csvTime(l.endTime),
-              'Flight',
-              l.aircraftType || '',
-              l.aircraftRegistration || '',
-              fmtDuration(l.blockTimeMinutes).replace('h',''),
-              '0:00',
-              role
-            ]);
-          });
-        } else {
-          rows.push([
-            csvDate(act.startTime),
-            act.activityCode?.id || type.toUpperCase(),
-            act.startStation || '',
-            act.endStation || '',
-            csvTime(act.startTime),
-            csvTime(act.endTime),
-            '', '',
-            type.toUpperCase(),
-            '', '', '0:00',
-            fmtDuration(act.durationMinutes).replace('h',''),
-            role
-          ]);
-        }
-      });
-
-      const csvContent = rows.map(r => r.map(csvEsc).join(',')).join('\r\n');
-      downloadBlob(csvContent, 'text/csv;charset=utf-8', 'ram_selected_log_' + crewId + '.csv');
-    }
-
-    function downloadBlob(content, mime, filename) {
-      const blob = new Blob([content], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
-    }
-
-    let currentView = 'list';
-    let calYear = new Date().getUTCFullYear();
-    let calMonth = new Date().getUTCMonth();
-    let calSelectedDay = null;
-
-    function setView(view) {
-      currentView = view;
-      document.getElementById('btnListView').classList.toggle('active', view === 'list');
-      document.getElementById('btnCalView').classList.toggle('active', view === 'calendar');
-      document.getElementById('activityList').classList.toggle('hidden', view === 'calendar');
-      document.getElementById('calendarView').classList.toggle('hidden', view !== 'calendar');
-      totalsBar.classList.toggle('hidden', view === 'calendar');
-      selectionBar.classList.add('invisible');
-      
-      if (view === 'calendar') {
-        if (allCards.length) {
-          const firstMonth = allCards.reduce((min, c) => c.month < min ? c.month : min, allCards[0].month);
-          const [y, m] = firstMonth.split('-').map(Number);
-          calYear = y;
-          calMonth = m - 1;
-        }
-        calSelectedDay = null;
-        renderCalendar();
-      }
-    }
-
-    function calNav(dir) {
-      calMonth += dir;
-      if (calMonth > 11) { calMonth = 0; calYear++; }
-      if (calMonth < 0) { calMonth = 11; calYear--; }
-      calSelectedDay = null;
-      renderCalendar();
-    }
-
-    function renderCalendar() {
-      const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-      const ICONS = { flight: 'ti-plane', standby: 'ti-clock', training: 'ti-school', other: 'ti-briefcase' };
-      document.getElementById('calMonthLabel').textContent = MONTHS[calMonth] + ' ' + calYear;
-
-      const firstDayIdx = new Date(Date.UTC(calYear, calMonth, 1)).getUTCDay();
-      const daysInMonth = new Date(Date.UTC(calYear, calMonth + 1, 0)).getUTCDate();
-      const grid = document.getElementById('calGrid');
-      grid.innerHTML = '';
-
-      const dayMap = {};
-      allCards.forEach(c => {
-        const d = new Date(c.act.startTime);
-        if (d.getUTCFullYear() === calYear && d.getUTCMonth() === calMonth) {
-          const k = d.getUTCDate();
-          if (!dayMap[k]) dayMap[k] = [];
-          dayMap[k].push(c);
-        }
-      });
-
-      for (let i = 0; i < firstDayIdx; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'cal-cell other-month';
-        grid.appendChild(cell);
-      }
-
-      const today = new Date();
-      for (let d = 1; d <= daysInMonth; d++) {
-        const dateKey = d;
-        const cards = dayMap[d] || [];
-        const isToday = (d === today.getUTCDate() && calMonth === today.getUTCMonth() && calYear === today.getUTCFullYear());
-        const isSel = (calSelectedDay === dateKey);
-
-        const cell = document.createElement('div');
-        cell.className = 'cal-cell' + (cards.length ? ' has-activity' : '') + (isToday ? ' is-today' : '') + (isSel ? ' selected-day' : '');
-        
-        let inner = `<span class="cal-cell-day">${d}</span>`;
-        cards.slice(0, 2).forEach(c => {
-          const label = c.act.startStation && c.act.endStation ? c.act.startStation + '→' + c.act.endStation : (c.act.key?.name || c.type);
-          inner += `<div class="cal-pill ${c.type}"><i class="ti ${ICONS[c.type]||'ti-point'}"></i>${label}</div>`;
-        });
-        if (cards.length > 2) inner += `<div class="cal-pill-more">+${cards.length - 2} more</div>`;
-        
-        cell.innerHTML = inner;
-        if (cards.length) {
-          cell.addEventListener('click', () => selectCalDay(dateKey, cards, cell));
-        }
-        grid.appendChild(cell);
-      }
-
-      if (calSelectedDay && dayMap[calSelectedDay]) {
-        renderDayPanel(calSelectedDay, dayMap[calSelectedDay]);
-      } else {
-        document.getElementById('calDayPanel').classList.add('hidden');
-      }
-    }
-
-    function selectCalDay(dateKey, cards, cell) {
-      document.querySelectorAll('.cal-cell.selected-day').forEach(el => el.classList.remove('selected-day'));
-      if (calSelectedDay === dateKey) {
-        calSelectedDay = null;
-        document.getElementById('calDayPanel').classList.add('hidden');
-        return;
-      }
-      calSelectedDay = dateKey;
-      cell.classList.add('selected-day');
-      renderDayPanel(dateKey, cards);
-    }
-
-    function renderDayPanel(dayNum, cards) {
-      const panel = document.getElementById('calDayPanel');
-      const title = document.getElementById('calDayTitle');
-      const count = document.getElementById('calDayCount');
-      const cardsCont = document.getElementById('calDayCards');
-
-      title.textContent = dayNum + ' ' + document.getElementById('calMonthLabel').textContent;
-      count.textContent = cards.length + ' events';
-      cardsCont.innerHTML = '';
-
-      cards.forEach(c => {
-        const act = c.act;
-        const subs = act.activities || [];
-        const legs = subs.filter(s => s.type === 'flight-leg');
-        const crewList = legs.flatMap(l => l.assignedCrew || []).filter(cm => ['CDB','OPL'].includes(cm.position?.id || cm.position));
-
-        let routeText = act.startStation + ' → ' + act.endStation;
-        if (legs.length > 1) {
-          const stops = [...new Set(legs.map(l => l.startStation))];
-          stops.push(legs[legs.length-1].endStation);
-          routeText = stops.join(' → ');
-        }
-
-        const card = document.createElement('div');
-        card.className = 'day-card';
-        const SKIP = new Set(['briefing', 'debriefing']);
-        let legsHTML = '';
-        
-        subs.filter(s => !SKIP.has(s.type)).forEach(s => {
-          if (s.type === 'flight-leg') {
-            const fn = (s.carrier||'') + (s.flightNumber || s.activityCode?.id || '');
-            const crew = crewList.map(cm => cm.position + ' ' + cm.surname).join(', ');
-            legsHTML += `
-              <div style="padding:8px 13px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:2px;">
-                <div style="display:flex; justify-content:between; align-items:center;">
-                  <span style="font-weight:600;color:var(--ram-red);font-family:var(--mono);font-size:12px;">${fn}</span>
-                  <span style="font-weight:500;font-size:12px;margin-left:auto;">${s.startStation} → ${s.endStation}</span>
-                </div>
-                <div style="font-size:11px;color:var(--text-3);font-family:var(--mono);">${s.aircraftType||''} · ${fmtTime(s.startTime)}–${fmtTime(s.endTime)}</div>
-                ${crew ? `<div style="font-size:11px;color:var(--text-2);margin-top:3px;"><i class="ti ti-users" style="font-size:10px;margin-right:3px;"></i>${crew}</div>` : ''}
-              </div>`;
-          } else if (s.type === 'layover') {
-            legsHTML += `
-              <div style="padding:5px 13px; border-top:1px solid var(--border); border-left:2px solid var(--blue); display:flex; align-items:center; gap:8px;">
-                <i class="ti ti-moon" style="font-size:11px;color:var(--blue);"></i>
-                <span style="font-size:11px;font-weight:600;color:var(--blue);font-family:var(--mono);">Layover</span>
-                <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);">${s.startStation} · ${fmtDuration(s.durationMinutes)}</span>
-                <span style="font-size:11px;color:var(--text-3);font-family:var(--mono);margin-left:auto;">${fmtTime(s.startTime)}–${fmtTime(s.endTime)}</span>
-              </div>`;
-          }
-        });
-
-        const BADGE = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' };
-        card.innerHTML = `
-          <div class="day-card-header">
-            <span class="type-badge ${BADGE[c.type]}">${c.type}</span>
-            <div class="day-card-route">${routeText}</div>
-            <div class="day-card-dur">${fmtDuration(act.durationMinutes)}</div>
-          </div>
-          <div class="day-card-legs">${legsHTML}</div>
-        `;
-        cardsCont.appendChild(card);
-      });
-      panel.classList.remove('hidden');
-    }
+    function refreshRoster() { initializeRosterSync(); }
   </script>
 </body>
 </html>
