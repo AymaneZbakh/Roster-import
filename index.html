@@ -1904,12 +1904,26 @@ function exportSelectedIcal() {
   _doExportIcal(selActs, entity.crewId || 'CREW', '_selected');
 }
 function _doExportIcal(activities, crewId, suffix = '') {
-  function icsDate(iso) {
+  // True UTC stamp (with trailing Z) — used only for DTSTAMP, the "file generated at" marker.
+  function icsDateUTC(iso) {
     if (!iso) return null;
     const d   = new Date(iso);
     const pad = n => n.toString().padStart(2,'0');
     return d.getUTCFullYear() + pad(d.getUTCMonth()+1) + pad(d.getUTCDate())
          + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + '00Z';
+  }
+  // Roster times are Zulu/UTC clock digits (e.g. 08:20Z means 08:20 UTC). Calendar apps
+  // convert a trailing "Z" to the device's local timezone, which silently shifts the
+  // displayed time (Africa/Casablanca is UTC+1, turning 08:20 into 09:20 and no longer
+  // matching the roster). To show the exact same digits as the roster on every device,
+  // we emit a "floating" date-time (no trailing Z, no TZID) — calendar apps render
+  // floating times as-is, with no timezone conversion, so 08:20 always displays as 08:20.
+  function icsDate(iso) {
+    if (!iso) return null;
+    const d   = new Date(iso);
+    const pad = n => n.toString().padStart(2,'0');
+    return d.getUTCFullYear() + pad(d.getUTCMonth()+1) + pad(d.getUTCDate())
+         + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + '00';
   }
   function fold(line) {
     const out = [];
@@ -1920,7 +1934,7 @@ function _doExportIcal(activities, crewId, suffix = '') {
     return (str||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
   }
 
-  const now = icsDate(new Date().toISOString());
+  const now = icsDateUTC(new Date().toISOString());
   let cal = [
     'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RAM Roster Viewer//EN',
     'CALSCALE:GREGORIAN','METHOD:PUBLISH',
@@ -1934,8 +1948,12 @@ function _doExportIcal(activities, crewId, suffix = '') {
     const role       = act.key?.role || '';
     const keyName    = act.key?.name || '';
     const uid        = 'ram-' + crewId + '-' + idx + '-' + (act.startTime||idx) + '@ram-roster';
-    const dtstart    = icsDate(act.startTime);
-    const dtend      = icsDate(act.endTime);
+    // For flights, use the actual flight block (first leg off-blocks to last leg on-blocks)
+    // rather than the wider duty span, which also includes briefing/debriefing padding.
+    const blockStart = (type === 'flight' && flightLegs.length) ? flightLegs[0].startTime : act.startTime;
+    const blockEnd   = (type === 'flight' && flightLegs.length) ? flightLegs[flightLegs.length-1].endTime : act.endTime;
+    const dtstart    = icsDate(blockStart);
+    const dtend      = icsDate(blockEnd);
     if (!dtstart || !dtend) return;
 
     const typeLabel = { flight:'✈', standby:'🔁', training:'📚', other:'🗓' }[type] || '';
@@ -1948,8 +1966,14 @@ function _doExportIcal(activities, crewId, suffix = '') {
     const summary  = typeLabel + ' ' + route + (role ? ' ('+role+')' : '');
     const location = act.startStation || '';
     const descParts = [];
+    descParts.push('All times UTC/Zulu');
     if (keyName) descParts.push('Trip: ' + keyName);
-    if (act.durationMinutes) descParts.push('Duration: ' + fmtDuration(act.durationMinutes));
+    if (type === 'flight' && flightLegs.length) {
+      const blockMins = Math.round((new Date(blockEnd) - new Date(blockStart)) / 60000);
+      descParts.push('Block: ' + fmtDuration(blockMins));
+    } else if (act.durationMinutes) {
+      descParts.push('Duration: ' + fmtDuration(act.durationMinutes));
+    }
     flightLegs.forEach(l => {
       const fn = (l.carrier||'') + (l.flightNumber||l.activityCode?.id||'');
       descParts.push(fn + '  ' + l.startStation + ' → ' + l.endStation
