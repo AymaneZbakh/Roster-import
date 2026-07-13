@@ -2,8 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>RAM Roster Viewer</title>
+
+  <!-- PWA / "Add to Home Screen" support -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0d0f12">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RAM Roster">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" href="icon-512.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
@@ -1366,11 +1376,14 @@ async function verifyPinCode() {
 }
 
 // ── DATA FETCH ─────────────────────────────────────────────────────────────
+const ROSTER_CACHE_KEY = 'ram-roster-last-good';
+
 async function initializeRosterSync() {
   try {
     const response = await fetch('roster.json');
     if (response.ok) {
       const data = await response.json();
+      try { localStorage.setItem(ROSTER_CACHE_KEY, JSON.stringify(data)); } catch {}
       const entity = data.entity || data;
       (entity.activities || []).forEach(act => {
         if (classifyActivity(act) === 'flight') {
@@ -1379,8 +1392,21 @@ async function initializeRosterSync() {
       });
       renderRoster(data);
     }
-    else showErrorState();
-  } catch { showErrorState(); }
+    else loadFromCacheOrError();
+  } catch { loadFromCacheOrError(); }
+}
+
+function loadFromCacheOrError() {
+  const cached = localStorage.getItem(ROSTER_CACHE_KEY);
+  if (cached) {
+    try {
+      const data = JSON.parse(cached);
+      renderRoster(data);
+      showToast('Offline mode', 'Showing your last synced roster', 'No connection — data may be outdated');
+      return;
+    } catch {}
+  }
+  showErrorState();
 }
 async function refreshRoster() {
   const btn = document.getElementById('refreshBtn');
@@ -1402,9 +1428,13 @@ async function refreshRoster() {
   activityList.innerHTML = '<div class="empty-state"><i class="ti ti-loader spin"></i><p>Synchronizing Live Roster File</p><span>Pulling background data layers...</span></div>';
   try {
     const response = await fetch('roster.json?t=' + Date.now());
-    if (response.ok) { renderRoster(await response.json()); }
-    else showErrorState();
-  } catch { showErrorState(); }
+    if (response.ok) {
+      const data = await response.json();
+      try { localStorage.setItem(ROSTER_CACHE_KEY, JSON.stringify(data)); } catch {}
+      renderRoster(data);
+    }
+    else loadFromCacheOrError();
+  } catch { loadFromCacheOrError(); }
   icon.classList.remove('spin');
   btn.disabled = false;
 }
@@ -2274,6 +2304,13 @@ function renderDayPanel(dateKey, cards) {
   });
 
   panel.classList.remove('hidden');
+}
+
+// ── PWA: register service worker for offline app-shell caching ─────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
 }
 </script>
 </body>
