@@ -42,11 +42,17 @@ jobs:
         session.headers.update({"User-Agent": "Mozilla/5.0"})
 
         print("Attempting lightweight login for pre-check...")
-        login_resp = session.post(
-            "https://crewaccess.ram.jepphost.com/access/crewweb/api/login",
-            json={"username": username, "password": password},
-            timeout=20
-        )
+        try:
+            login_resp = session.post(
+                "https://crewaccess.ram.jepphost.com/access/crewweb/api/login",
+                json={"username": username, "password": password},
+                timeout=20
+            )
+        except requests.exceptions.RequestException as e:
+            print(f"Pre-check request failed ({e}). Proceeding to full sync.")
+            with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                f.write("changed=true\n")
+            exit(0)
 
         if login_resp.status_code not in (200, 201):
             # Can't do pre-check (ADFS/SSO may require browser), skip to full sync
