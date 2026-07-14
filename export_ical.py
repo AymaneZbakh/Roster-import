@@ -116,14 +116,28 @@ def build_ical(activities, crew_id):
 
         desc = []
 
-        for l in legs:
-            fn = f"{l.get('carrier','')}{l.get('flightNumber', (l.get('activityCode') or {}).get('id',''))}"
-            status = f"  [{l['statusLabel']}]" if l.get("statusLabel") else ""
-            desc.append(
-                f"{fn}  {l['startStation']} → {l['endStation']}  "
-                f"{fmt_time(l['startTime'])}–{fmt_time(l['endTime'])}"
-                f"{'  ' + l['aircraftType'] if l.get('aircraftType') else ''}{status}"
-            )
+        for s in subs:
+            if s.get("type") == "flight-leg" and not s.get("isCancelled"):
+                fn = f"{s.get('carrier','')}{s.get('flightNumber', (s.get('activityCode') or {}).get('id',''))}"
+                status = f"  [{s['statusLabel']}]" if s.get("statusLabel") else ""
+                ac = s.get("aircraftType", "")
+                reg = s.get("tail", "")
+                ac_reg = f"  {ac} {reg}".rstrip() if (ac or reg) else ""
+                desc.append(
+                    f"{fn}  {s['startStation']} → {s['endStation']}  "
+                    f"{fmt_time(s['startTime'])}–{fmt_time(s['endTime'])}"
+                    f"{ac_reg}{status}"
+                )
+            elif s.get("type") == "layover":
+                hotel = (s.get("hotel") or {}).get("name")
+                st, et = parse_iso(s.get("startTime")), parse_iso(s.get("endTime"))
+                dur = fmt_duration(int((et - st).total_seconds() / 60)) if st and et else None
+                line = f"🌙 Layover {s.get('startStation','')}"
+                if dur:
+                    line += f"  {dur}"
+                if hotel:
+                    line += f"  — {hotel}"
+                desc.append(line)
 
         if act_type in ("flight", "training"):
             crew_map = {}
@@ -137,7 +151,7 @@ def build_ical(activities, crew_id):
             def collect(src):
                 for c in src.get("assignedCrew", []) or []:
                     pos = get_pos(c)
-                    if pos in ("CDB", "OPL"):
+                    if pos in ("CDB", "OPL", "CC"):
                         key = c.get("crewId") or (c.get("givenNames", "") + c.get("surname", ""))
                         crew_map.setdefault(key, {**c, "position": pos})
 
