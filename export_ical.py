@@ -114,7 +114,10 @@ def build_ical(activities, crew_id):
         summary = f"{icon} {route}" + (f" ({role})" if role else "")
         location = act.get("startStation", "")
 
+        SEP = "──────────"
+
         desc = []
+        leg_layover_lines = []
 
         for s in subs:
             if s.get("type") == "flight-leg" and not s.get("isCancelled"):
@@ -123,7 +126,7 @@ def build_ical(activities, crew_id):
                 ac = s.get("aircraftType", "")
                 reg = s.get("tail", "")
                 ac_reg = f"  {ac} {reg}".rstrip() if (ac or reg) else ""
-                desc.append(
+                leg_layover_lines.append(
                     f"{fn}  {s['startStation']} → {s['endStation']}  "
                     f"{fmt_time(s['startTime'])}–{fmt_time(s['endTime'])}"
                     f"{ac_reg}{status}"
@@ -137,7 +140,12 @@ def build_ical(activities, crew_id):
                     line += f"  {dur}"
                 if hotel:
                     line += f"  — {hotel}"
-                desc.append(line)
+                leg_layover_lines.append(line)
+
+        for i, line in enumerate(leg_layover_lines):
+            if i > 0:
+                desc.append(SEP)
+            desc.append(line)
 
         if act_type in ("flight", "training"):
             crew_map = {}
@@ -160,8 +168,11 @@ def build_ical(activities, crew_id):
                 collect(s)
                 for ss in s.get("activities", []) or []:
                     collect(ss)
-            for c in crew_map.values():
-                desc.append(f"{c['position']}: {c.get('givenNames','')} {c.get('surname','')} ({c.get('crewId','')})")
+            if crew_map:
+                if desc:
+                    desc.append(SEP)
+                for c in crew_map.values():
+                    desc.append(f"{c['position']}: {c.get('givenNames','')} {c.get('surname','')} ({c.get('crewId','')})")
 
         lines.append("BEGIN:VEVENT")
         lines.append(fold(f"UID:{esc(uid)}"))
