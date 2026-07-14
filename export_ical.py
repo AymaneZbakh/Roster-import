@@ -114,14 +114,7 @@ def build_ical(activities, crew_id):
         summary = f"{icon} {route}" + (f" ({role})" if role else "")
         location = act.get("startStation", "")
 
-        desc = ["All times UTC/Zulu"]
-        if key_name:
-            desc.append(f"Trip: {key_name}")
-        if act_type == "flight" and legs:
-            block_mins = int((dtend - dtstart).total_seconds() / 60)
-            desc.append(f"Block: {fmt_duration(block_mins)}")
-        elif act.get("durationMinutes"):
-            desc.append(f"Duration: {fmt_duration(act['durationMinutes'])}")
+        desc = []
 
         for l in legs:
             fn = f"{l.get('carrier','')}{l.get('flightNumber', (l.get('activityCode') or {}).get('id',''))}"
