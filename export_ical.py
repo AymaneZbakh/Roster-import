@@ -135,9 +135,15 @@ def build_ical(activities, crew_id):
         if act_type in ("flight", "training"):
             crew_map = {}
 
+            def get_pos(c):
+                p = c.get("position")
+                if isinstance(p, dict):
+                    return str(p.get("id", "")).upper()
+                return str(p or "").upper()
+
             def collect(src):
                 for c in src.get("assignedCrew", []) or []:
-                    pos = str((c.get("position") or {}).get("id", c.get("position", ""))).upper()
+                    pos = get_pos(c)
                     if pos in ("CDB", "OPL"):
                         key = c.get("crewId") or (c.get("givenNames", "") + c.get("surname", ""))
                         crew_map.setdefault(key, {**c, "position": pos})
