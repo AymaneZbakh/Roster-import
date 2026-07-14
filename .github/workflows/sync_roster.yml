@@ -37,7 +37,6 @@ jobs:
         username = os.environ.get("CREW_USER")
         password = os.environ.get("CREW_PASS")
 
-        # --- Step 1: Get a session token via plain HTTP login (no browser) ---
         session = requests.Session()
         session.headers.update({"User-Agent": "Mozilla/5.0"})
 
@@ -55,13 +54,11 @@ jobs:
             exit(0)
 
         if login_resp.status_code not in (200, 201):
-            # Can't do pre-check (ADFS/SSO may require browser), skip to full sync
             print("Pre-check login failed (likely ADFS). Proceeding to full sync.")
             with open(os.environ["GITHUB_OUTPUT"], "a") as f:
                 f.write("changed=true\n")
             exit(0)
 
-        # --- Step 2: Fetch roster lightly and hash it ---
         roster_resp = session.get(
             "https://crewaccess.ram.jepphost.com/access/crewweb/crew/roster/v1",
             timeout=20
@@ -76,7 +73,6 @@ jobs:
         new_hash = hashlib.md5(roster_resp.content).hexdigest()
         print(f"Remote roster hash: {new_hash}")
 
-        # --- Step 3: Hash the existing local roster.json ---
         try:
             with open("roster.json", "rb") as f:
                 old_hash = hashlib.md5(f.read()).hexdigest()
@@ -85,12 +81,15 @@ jobs:
             old_hash = ""
             print("No local roster.json found. Will do full sync.")
 
-        # --- Step 4: Output result ---
         changed = new_hash != old_hash
         print(f"Roster changed: {changed}")
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
             f.write(f"changed={'true' if changed else 'false'}\n")
         EOF
+
+    - name: Save previous roster for comparison
+      if: steps.precheck.outputs.changed == 'true'
+      run: cp roster.json roster_old.json 2>/dev/null || echo "No previous roster.json yet."
 
     - name: Run Automated Browser Login
       if: steps.precheck.outputs.changed == 'true'
@@ -156,12 +155,23 @@ jobs:
             browser.close()
         EOF
 
+    - name: Detect roster changes and send alert
+      if: steps.precheck.outputs.changed == 'true'
+      env:
+        NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      run: python detect_changes.py
+
+    - name: Regenerate calendar.ics
+      if: steps.precheck.outputs.changed == 'true'
+      run: python export_ical.py
+
     - name: Commit and Update GitHub Pages
       if: steps.precheck.outputs.changed == 'true'
       run: |
+        rm -f roster_old.json
         git config --global user.name "Roster Automation Bot"
         git config --global user.email "bot@github.actions"
-        git add roster.json
+        git add roster.json calendar.ics
         if git diff --staged --quiet; then
           echo "No changes detected. Skipping commit."
         else
