@@ -17,7 +17,7 @@ def parse_iso(iso):
 
 
 def ics_date(dt):
-    # Floating local time (no trailing Z) — matches the exact digits shown in
+    # Floating local time (no trailing Z) â€” matches the exact digits shown in
     # the roster instead of letting calendar apps re-shift them by timezone.
     return dt.strftime("%Y%m%dT%H%M%S")
 
@@ -71,7 +71,7 @@ def build_ical(activities, crew_id):
     lines = [
         "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//RAM Roster Viewer//EN",
         "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
-        fold(f"X-WR-CALNAME:RAM Roster – {crew_id}"), "X-WR-TIMEZONE:UTC",
+        fold(f"X-WR-CALNAME:RAM Roster â€“ {crew_id}"), "X-WR-TIMEZONE:UTC",
     ]
 
     for idx, act in enumerate(activities):
@@ -79,7 +79,7 @@ def build_ical(activities, crew_id):
         subs = act.get("activities", [])
         all_legs = [s for s in subs if s.get("type") == "flight-leg"]
 
-        # Drop cancelled legs. If a "flight" trip has none left, skip it entirely —
+        # Drop cancelled legs. If a "flight" trip has none left, skip it entirely â€”
         # this is what makes a cancelled flight disappear from the calendar.
         legs = [l for l in all_legs if not l.get("isCancelled")]
         if act_type == "flight" and not legs:
@@ -101,20 +101,20 @@ def build_ical(activities, crew_id):
         if not dtstart or not dtend:
             continue
 
-        icon = {"flight": "✈", "standby": "🔁", "training": "📚", "other": "🗓"}.get(act_type, "")
-        route = f"{act.get('startStation','')} → {act.get('endStation','')}"
+        icon = {"flight": "âœˆ", "standby": "ðŸ”", "training": "ðŸ“š", "other": "ðŸ—“"}.get(act_type, "")
+        route = f"{act.get('startStation','')} â†’ {act.get('endStation','')}"
         if len(legs) > 1:
             stops, seen = [], set()
             for l in legs:
                 if l["startStation"] not in seen:
                     stops.append(l["startStation"]); seen.add(l["startStation"])
             stops.append(legs[-1]["endStation"])
-            route = " → ".join(stops)
+            route = " â†’ ".join(stops)
 
         summary = f"{icon} {route}" + (f" ({role})" if role else "")
         location = act.get("startStation", "")
 
-        SEP = "──────────"
+        SEP = "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€"
 
         desc = []
         leg_layover_lines = []
@@ -127,19 +127,19 @@ def build_ical(activities, crew_id):
                 reg = s.get("tail", "")
                 ac_reg = f"  {ac} {reg}".rstrip() if (ac or reg) else ""
                 leg_layover_lines.append(
-                    f"{fn}  {s['startStation']} → {s['endStation']}  "
-                    f"{fmt_time(s['startTime'])}–{fmt_time(s['endTime'])}"
+                    f"{fn}  {s['startStation']} â†’ {s['endStation']}  "
+                    f"{fmt_time(s['startTime'])}â€“{fmt_time(s['endTime'])}"
                     f"{ac_reg}{status}"
                 )
             elif s.get("type") == "layover":
                 hotel = (s.get("hotel") or {}).get("name")
                 st, et = parse_iso(s.get("startTime")), parse_iso(s.get("endTime"))
                 dur = fmt_duration(int((et - st).total_seconds() / 60)) if st and et else None
-                line = f"🌙 Layover {s.get('startStation','')}"
+                line = f"ðŸŒ™ Layover {s.get('startStation','')}"
                 if dur:
                     line += f"  {dur}"
                 if hotel:
-                    line += f"  — {hotel}"
+                    line += f"  â€” {hotel}"
                 leg_layover_lines.append(line)
 
         for i, line in enumerate(leg_layover_lines):
