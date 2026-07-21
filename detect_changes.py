@@ -178,10 +178,16 @@ def main():
 
     body = "\n".join(messages)
     try:
+        # HTTP headers must be Latin-1/ASCII only. An em dash (—) or any other
+        # non-ASCII character in a header value makes urllib raise before the
+        # request is even sent, which silently kills the notification. Keep
+        # header values plain ASCII; UTF-8 content (emoji, accents, etc.) is
+        # fine in the body since that's sent as encoded bytes, not a header.
+        title = f"Roster Updated - {len(messages)} change(s)".encode("ascii", "ignore").decode("ascii")
         req = urllib.request.Request(
             f"https://ntfy.sh/{topic}",
             data=body.encode("utf-8"),
-            headers={"Title": f"Roster Updated — {len(messages)} change(s)", "Priority": "high"},
+            headers={"Title": title, "Priority": "high"},
             method="POST",
         )
         urllib.request.urlopen(req, timeout=10)
@@ -191,3 +197,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
