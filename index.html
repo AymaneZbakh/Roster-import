@@ -1977,10 +1977,42 @@ function _doExportIcal(activities, crewId, suffix = '') {
     const flightLegs = subs.filter(s => s.type === 'flight-leg');
     const role       = act.key?.role || '';
     const keyName    = act.key?.name || '';
+    const uid        = 'ram-' + crewId + '-' + idx + '-' + (act.startTime||idx) + '@ram-roster';
+    // For flights, use the actual flight block (first leg off-blocks to last leg on-blocks)
+    // rather than the wider duty span, which also includes briefing/debriefing padding.
+    const blockStart = (type === 'flight' && flightLegs.length) ? flightLegs[0].startTime : act.startTime;
+    const blockEnd   = (type === 'flight' && flightLegs.length) ? flightLegs[flightLegs.length-1].endTime : act.endTime;
+    const dtstart    = icsDate(blockStart);
+    const dtend      = icsDate(blockEnd);
+    if (!dtstart || !dtend) return;
 
-    // Senior crew (CDB/OPL) is shared across all legs of the same duty, so collect it once.
-    const crewMap = new Map();
+    const typeLabel = { flight:'✈', standby:'🔁', training:'📚', other:'🗓' }[type] || '';
+    let route = act.startStation + ' → ' + act.endStation;
+    if (flightLegs.length > 1) {
+      const stops = [...new Set(flightLegs.map(l => l.startStation))];
+      stops.push(flightLegs[flightLegs.length-1].endStation);
+      route = stops.join(' → ');
+    }
+    const summary  = typeLabel + ' ' + route + (role ? ' ('+role+')' : '');
+    const location = act.startStation || '';
+    const descParts = [];
+    descParts.push('All times UTC/Zulu');
+    if (keyName) descParts.push('Trip: ' + keyName);
+    if (type === 'flight' && flightLegs.length) {
+      const blockMins = Math.round((new Date(blockEnd) - new Date(blockStart)) / 60000);
+      descParts.push('Block: ' + fmtDuration(blockMins));
+    } else if (act.durationMinutes) {
+      descParts.push('Duration: ' + fmtDuration(act.durationMinutes));
+    }
+    flightLegs.forEach(l => {
+      const fn = (l.carrier||'') + (l.flightNumber||l.activityCode?.id||'');
+      descParts.push(fn + '  ' + l.startStation + ' → ' + l.endStation
+        + '  ' + fmtTime(l.startTime) + '–' + fmtTime(l.endTime)
+        + (l.aircraftType ? '  ' + l.aircraftType : '')
+        + (l.statusLabel  ? '  [' + l.statusLabel + ']' : ''));
+    });
     if (type === 'flight' || type === 'training') {
+      const crewMap = new Map();
       const collectCrew = (source) => {
         (source.assignedCrew || []).forEach(c => {
           const pos = (c.position?.id || c.position || '').toUpperCase();
@@ -1995,64 +2027,11 @@ function _doExportIcal(activities, crewId, suffix = '') {
         collectCrew(s);
         (s.activities || []).forEach(ss => collectCrew(ss));
       });
-    }
-    const crewDescLines = [...crewMap.values()].map(c =>
-      c.position + ': ' + c.givenNames + ' ' + c.surname + ' (' + c.crewId + ')');
-
-    if (type === 'flight' && flightLegs.length) {
-      // One VEVENT per leg (e.g. CMN → ORY and ORY → CMN as two separate events),
-      // instead of a single event spanning the whole rotation.
-      flightLegs.forEach((leg, legIdx) => {
-        const dtstart = icsDate(leg.startTime);
-        const dtend   = icsDate(leg.endTime);
-        if (!dtstart || !dtend) return;
-
-        const fn    = (leg.carrier||'') + (leg.flightNumber||leg.activityCode?.id||'');
-        const route = leg.startStation + ' → ' + leg.endStation;
-        const summary  = '✈ ' + route + (fn ? ' ' + fn : '') + (role ? ' ('+role+')' : '');
-        const location = leg.startStation || '';
-        const blockMins = Math.round((new Date(leg.endTime) - new Date(leg.startTime)) / 60000);
-
-        const descParts = [];
-        descParts.push('All times UTC/Zulu');
-        if (keyName) descParts.push('Trip: ' + keyName);
-        descParts.push('Block: ' + fmtDuration(blockMins));
-        descParts.push(fn + '  ' + route
-          + '  ' + fmtTime(leg.startTime) + '–' + fmtTime(leg.endTime)
-          + (leg.aircraftType ? '  ' + leg.aircraftType : '')
-          + (leg.statusLabel  ? '  [' + leg.statusLabel + ']' : ''));
-        descParts.push(...crewDescLines);
-
-        const uid = 'ram-' + crewId + '-' + idx + '-' + legIdx + '-' + (leg.startTime||legIdx) + '@ram-roster';
-        cal.push('BEGIN:VEVENT');
-        cal.push(fold('UID:' + icsEscape(uid)));
-        cal.push('DTSTAMP:' + now);
-        cal.push('DTSTART:' + dtstart);
-        cal.push('DTEND:' + dtend);
-        cal.push(fold('SUMMARY:' + icsEscape(summary)));
-        if (location) cal.push(fold('LOCATION:' + icsEscape(location)));
-        if (descParts.length) cal.push(fold('DESCRIPTION:' + icsEscape(descParts.join('\n'))));
-        cal.push('END:VEVENT');
+      [...crewMap.values()].forEach(c => {
+        descParts.push(c.position + ': ' + c.givenNames + ' ' + c.surname + ' (' + c.crewId + ')');
       });
-      return;
     }
 
-    // Non-flight duties (standby, training, other) keep a single event for the whole span.
-    const dtstart = icsDate(act.startTime);
-    const dtend   = icsDate(act.endTime);
-    if (!dtstart || !dtend) return;
-
-    const typeLabel = { standby:'🔁', training:'📚', other:'🗓' }[type] || '';
-    const route    = act.startStation + ' → ' + act.endStation;
-    const summary  = typeLabel + ' ' + route + (role ? ' ('+role+')' : '');
-    const location = act.startStation || '';
-    const descParts = [];
-    descParts.push('All times UTC/Zulu');
-    if (keyName) descParts.push('Trip: ' + keyName);
-    if (act.durationMinutes) descParts.push('Duration: ' + fmtDuration(act.durationMinutes));
-    descParts.push(...crewDescLines);
-
-    const uid = 'ram-' + crewId + '-' + idx + '-' + (act.startTime||idx) + '@ram-roster';
     cal.push('BEGIN:VEVENT');
     cal.push(fold('UID:' + icsEscape(uid)));
     cal.push('DTSTAMP:' + now);
