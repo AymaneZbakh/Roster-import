@@ -171,11 +171,22 @@ jobs:
         NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
       run: python detect_changes.py
 
-    - name: Regenerate calendar feed (unguessable filename)
+    - name: Regenerate calendar feed (local, temporary file only)
+      if: steps.precheck.outputs.changed == 'true'
+      run: python export_ical.py
+      # writes to ./roster_local.ics — never committed, see .gitignore.
+      # It exists only so the next step can read it and push it to a
+      # secret Gist. It is NOT the same thing as a public repo file with
+      # a random name: a public repo's file listing exposes every
+      # filename regardless of how random it is, which is why the old
+      # "unguessable filename in the repo" approach didn't actually work.
+
+    - name: Publish calendar to secret Gist
       if: steps.precheck.outputs.changed == 'true'
       env:
-        ICS_OUTPUT_FILENAME: ${{ secrets.ICS_FILENAME }}
-      run: python export_ical.py
+        GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+        GIST_ID: ${{ secrets.GIST_ID }}
+      run: python scripts/publish_ics_gist.py roster_local.ics
 
     - name: Encrypt roster before it ever touches git
       if: steps.precheck.outputs.changed == 'true'
@@ -185,16 +196,14 @@ jobs:
 
     - name: Commit and Update GitHub Pages
       if: steps.precheck.outputs.changed == 'true'
-      env:
-        ICS_OUTPUT_FILENAME: ${{ secrets.ICS_FILENAME }}
       run: |
-        rm -f roster.json roster_old.json
+        rm -f roster.json roster_old.json roster_local.ics
         git config --global user.name "Roster Automation Bot"
         git config --global user.email "bot@github.actions"
-        # Only the ENCRYPTED roster and the token-named calendar feed are
-        # ever staged — plaintext roster.json/roster_old.json are deleted
-        # above and are also .gitignore'd as a second line of defense.
-        git add roster.enc.json "${ICS_OUTPUT_FILENAME:-calendar.ics}"
+        # ONLY the encrypted roster is committed now. The calendar feed
+        # lives in a secret Gist (previous step), never in this repo —
+        # a public repo can't hide a filename, no matter how random it is.
+        git add roster.enc.json
         if git diff --staged --quiet; then
           echo "No changes detected. Skipping commit."
         else

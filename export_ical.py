@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generates calendar.ics from roster.json.
+Generates an .ics calendar feed from roster.json.
 Mirrors the in-app "Export Calendar (.ics)" logic in index.html, but runs
 automatically inside the GitHub Action so the file at a fixed public URL
 always reflects the latest roster. Cancelled flights are excluded entirely,
@@ -193,14 +193,12 @@ def build_ical(activities, crew_id):
 if __name__ == "__main__":
     import os
 
-    # calendar.ics is meant to be subscribed to by a normal calendar app, so
-    # (unlike roster.json) it can't be end-to-end encrypted — calendar apps
-    # just do a plain unauthenticated GET. The only realistic protection for
-    # a file like that is an unguessable URL: ICS_OUTPUT_FILENAME lets the
-    # Action publish it as e.g. "cal-<random-token>.ics" instead of the
-    # fixed, guessable "calendar.ics". Keep that filename secret — treat it
-    # like a password. Falls back to calendar.ics for local testing only.
-    output_filename = os.environ.get("ICS_OUTPUT_FILENAME", "calendar.ics")
+    # This writes a LOCAL, TEMPORARY file only — it is never committed to
+    # the repo (see .gitignore and the workflow step that deletes it).
+    # It exists purely so the next workflow step can read it and push it
+    # to a secret Gist. Override via ICS_LOCAL_FILENAME only if you need
+    # a different local path for manual/local testing.
+    output_filename = os.environ.get("ICS_LOCAL_FILENAME", "roster_local.ics")
 
     with open("roster.json", "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -212,4 +210,4 @@ if __name__ == "__main__":
     with open(output_filename, "w", encoding="utf-8", newline="") as f:
         f.write(ics)
 
-    print(f"Wrote {output_filename} with events for crew {crew_id}")
+    print(f"Wrote local temp file {output_filename} with events for crew {crew_id}")

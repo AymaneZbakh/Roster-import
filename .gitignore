@@ -2,7 +2,10 @@
 # roster.enc.json (produced by scripts/encrypt_roster.py) is tracked.
 roster.json
 roster_old.json
+roster_local.ics
 calendar.ics
+23430RAM.ics
+cal-*.ics
 
 # Local tooling
 __pycache__/
