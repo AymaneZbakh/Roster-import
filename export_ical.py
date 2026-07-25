@@ -105,6 +105,7 @@ def build_event_lines(now, uid, dtstart, dtend, summary, location, desc):
 
 def build_ical(activities, crew_id):
     now = ics_date_utc_now()
+    SEP = "──────────"
     lines = [
         "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//RAM Roster Viewer//EN",
         "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
@@ -140,23 +141,21 @@ def build_ical(activities, crew_id):
                     f" · {takeoff}" + (f" ({role})" if role else "")
                 )
 
-                desc = ["All times UTC/Zulu"]
-                if key_name:
-                    desc.append(f"Trip: {key_name}")
-                block_mins = leg.get("blockTimeMinutes", leg.get("durationMinutes"))
-                desc.append(f"Block: {fmt_duration(block_mins)}")
-                if leg.get("scheduledStartTime") and leg["scheduledStartTime"] != leg.get("startTime"):
-                    desc.append(f"Sched departure: {fmt_time(leg['scheduledStartTime'])}")
-                if leg.get("scheduledEndTime") and leg["scheduledEndTime"] != leg.get("endTime"):
-                    desc.append(f"Sched arrival: {fmt_time(leg['scheduledEndTime'])}")
-                if leg.get("aircraftType"):
-                    ac_line = f"Aircraft: {leg['aircraftType']}"
-                    if leg.get("tail"):
-                        ac_line += f" ({leg['tail']})"
-                    desc.append(ac_line)
-                if leg.get("statusLabel"):
-                    desc.append(f"Status: {leg['statusLabel']}")
-                desc.extend(crew_lines_for(leg))
+                ac = leg.get("aircraftType", "")
+                reg = leg.get("tail", "")
+                ac_reg = f"  {ac} {reg}".rstrip() if (ac or reg) else ""
+                status = f"  [{leg['statusLabel']}]" if leg.get("statusLabel") else ""
+                leg_line = (
+                    f"{fn}  {leg.get('startStation','')} → {leg.get('endStation','')}  "
+                    f"{fmt_time(leg.get('startTime'))}–{fmt_time(leg.get('endTime'))}"
+                    f"{ac_reg}{status}"
+                )
+
+                crew_lines = crew_lines_for(leg)
+                desc = [leg_line]
+                if crew_lines:
+                    desc.append(SEP)
+                    desc.extend(crew_lines)
 
                 lines.extend(build_event_lines(
                     now, f"{uid_base}-leg{li}", dtstart, dtend,
