@@ -1,0 +1,10 @@
+# Plaintext roster data must NEVER be committed — only the encrypted
+# roster.enc.json (produced by scripts/encrypt_roster.py) is tracked.
+roster.json
+roster_old.json
+calendar.ics
+
+# Local tooling
+__pycache__/
+*.pyc
+.DS_Store

@@ -1175,27 +1175,12 @@
       <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Logo_Royal_Air_Maroc.svg/3840px-Logo_Royal_Air_Maroc.svg.png" alt="Royal Air Maroc Logo">
     </div>
     <h2>Protected Console</h2>
-    <p>Authentication required to review flight rosters.</p>
+    <p>Enter your passphrase to decrypt and review flight rosters.</p>
     <div class="pin-input-wrapper">
-      <input type="password" id="pinInput" maxlength="6" placeholder="••••••" autocomplete="off" readonly>
+      <input type="password" id="pinInput" placeholder="Passphrase" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')verifyPinCode()">
     </div>
-    
-    <div id="errorMsg" class="error-msg hidden">Invalid access credential code</div>
 
-    <div class="numpad-grid">
-      <button class="numpad-btn" onclick="pressKey('1')">1</button>
-      <button class="numpad-btn" onclick="pressKey('2')">2</button>
-      <button class="numpad-btn" onclick="pressKey('3')">3</button>
-      <button class="numpad-btn" onclick="pressKey('4')">4</button>
-      <button class="numpad-btn" onclick="pressKey('5')">5</button>
-      <button class="numpad-btn" onclick="pressKey('6')">6</button>
-      <button class="numpad-btn" onclick="pressKey('7')">7</button>
-      <button class="numpad-btn" onclick="pressKey('8')">8</button>
-      <button class="numpad-btn" onclick="pressKey('9')">9</button>
-      <button class="numpad-btn action-btn" onclick="pressClear()">Clear</button>
-      <button class="numpad-btn" onclick="pressKey('0')">0</button>
-      <button class="numpad-btn action-btn" onclick="pressDelete()"><i class="ti ti-backspace"></i></button>
-    </div>
+    <div id="errorMsg" class="error-msg hidden">Wrong passphrase — could not decrypt roster data</div>
 
     <button class="pin-btn" onclick="verifyPinCode()">Unlock Workspace</button>
   </div>
@@ -1338,62 +1323,94 @@ function dismissToast(toast) {
   toast.addEventListener('animationend', () => toast.remove(), { once: true });
 }
 
-// ── PIN ────────────────────────────────────────────────────────────────────
-function pressKey(num) {
-  errorMsg.classList.add('hidden');
-  if (pinInput.value.length < 6) pinInput.value += num;
-}
-function pressDelete() {
-  errorMsg.classList.add('hidden');
-  pinInput.value = pinInput.value.slice(0, -1);
-}
-function pressClear() {
-  errorMsg.classList.add('hidden');
-  pinInput.value = '';
-}
-const CORRECT_PIN_HASH = "599d1db9da4631903b0c74ea64d598dead94905690b47ef7b03ed2c6a470de3c";
+// ── AUTH / DECRYPTION ────────────────────────────────────────────────────
+// roster.enc.json holds ONLY an AES-256-GCM ciphertext of the real roster,
+// keyed by PBKDF2-HMAC-SHA256 over your passphrase. There is no separate
+// "correct answer" stored anywhere to check against — the passphrase you
+// type either derives the right key and the file decrypts, or it doesn't.
+// A wrong passphrase can't be distinguished from a wrong file; both just
+// fail to decrypt. This must match scripts/encrypt_roster.py exactly.
+const PBKDF2_ITERATIONS_FALLBACK = 210000;
 
-async function hashPin(pin) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(pin);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+// Kept in memory only for this tab's session — never persisted — so a
+// background refresh can re-decrypt the latest roster.enc.json without
+// asking again. Closing the tab clears it.
+let sessionPassphrase = null;
+
+function b64ToBytes(b64) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+async function decryptEnvelope(envelope, passphrase) {
+  const salt = b64ToBytes(envelope.salt);
+  const iv = b64ToBytes(envelope.iv);
+  const ciphertext = b64ToBytes(envelope.ciphertext);
+  const iterations = envelope.iterations || PBKDF2_ITERATIONS_FALLBACK;
+
+  const baseKey = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']
+  );
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+  // Throws if the passphrase (and therefore the derived key) is wrong —
+  // AES-GCM's authentication tag makes tampering/wrong-key detectable,
+  // instead of silently returning garbage.
+  const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  return JSON.parse(new TextDecoder().decode(plainBuf));
 }
 
 async function verifyPinCode() {
   const entered = pinInput.value;
-  const enteredHash = await hashPin(entered);
-  if (enteredHash === CORRECT_PIN_HASH) {
+  if (!entered) return;
+  const unlockBtn = document.querySelector('.pin-btn');
+  unlockBtn.disabled = true;
+  unlockBtn.textContent = 'Decrypting…';
+  try {
+    const response = await fetch('roster.enc.json?t=' + Date.now());
+    if (!response.ok) throw new Error('roster.enc.json not found');
+    const envelope = await response.json();
+    const data = await decryptEnvelope(envelope, entered); // throws on wrong passphrase
+
+    sessionPassphrase = entered;
     errorMsg.classList.add('hidden');
     pinOverlay.classList.add('hidden');
     appContainer.style.display = 'block';
-    initializeRosterSync();
-  } else {
+    handleDecryptedRoster(data);
+  } catch (e) {
     errorMsg.classList.remove('hidden');
     pinInput.value = '';
+    pinInput.focus();
+  } finally {
+    unlockBtn.disabled = false;
+    unlockBtn.textContent = 'Unlock Workspace';
   }
 }
 
 // ── DATA FETCH ─────────────────────────────────────────────────────────────
+// The cache holds the already-decrypted roster, in this browser's own
+// localStorage, purely so the app works offline. It never touches the
+// network or the public repo, so it doesn't carry the same exposure as
+// the committed file — but it's still real personal data sitting on this
+// device, so this is only ever written after a successful decrypt.
 const ROSTER_CACHE_KEY = 'ram-roster-last-good';
 
-async function initializeRosterSync() {
-  try {
-    const response = await fetch('roster.json');
-    if (response.ok) {
-      const data = await response.json();
-      try { localStorage.setItem(ROSTER_CACHE_KEY, JSON.stringify(data)); } catch {}
-      const entity = data.entity || data;
-      (entity.activities || []).forEach(act => {
-        if (classifyActivity(act) === 'flight') {
-          knownFlightKeys.add(act.startTime + '|' + (act.startStation||'') + '|' + (act.endStation||''));
-        }
-      });
-      renderRoster(data);
+function handleDecryptedRoster(data) {
+  try { localStorage.setItem(ROSTER_CACHE_KEY, JSON.stringify(data)); } catch {}
+  const entity = data.entity || data;
+  (entity.activities || []).forEach(act => {
+    if (classifyActivity(act) === 'flight') {
+      knownFlightKeys.add(act.startTime + '|' + (act.startStation||'') + '|' + (act.endStation||''));
     }
-    else loadFromCacheOrError();
-  } catch { loadFromCacheOrError(); }
+  });
+  renderRoster(data);
 }
 
 function loadFromCacheOrError() {
@@ -1427,11 +1444,11 @@ async function refreshRoster() {
   totalsBar.classList.add('hidden');
   activityList.innerHTML = '<div class="empty-state"><i class="ti ti-loader spin"></i><p>Synchronizing Live Roster File</p><span>Pulling background data layers...</span></div>';
   try {
-    const response = await fetch('roster.json?t=' + Date.now());
-    if (response.ok) {
-      const data = await response.json();
-      try { localStorage.setItem(ROSTER_CACHE_KEY, JSON.stringify(data)); } catch {}
-      renderRoster(data);
+    const response = await fetch('roster.enc.json?t=' + Date.now());
+    if (response.ok && sessionPassphrase) {
+      const envelope = await response.json();
+      const data = await decryptEnvelope(envelope, sessionPassphrase);
+      handleDecryptedRoster(data);
     }
     else loadFromCacheOrError();
   } catch { loadFromCacheOrError(); }
@@ -1444,7 +1461,7 @@ function showErrorState() {
     <div class="empty-state">
       <i class="ti ti-cloud-exclamation"></i>
       <p>Roster File Not Found Yet</p>
-      <span>Your PIN is correct! However, your roster.json data layer is missing. Please check your GitHub Action workflow runs.</span>
+      <span>Your passphrase is correct! However, your roster.enc.json data layer is missing. Please check your GitHub Action workflow runs.</span>
     </div>`;
 }
 

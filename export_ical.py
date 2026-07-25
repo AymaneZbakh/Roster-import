@@ -191,6 +191,17 @@ def build_ical(activities, crew_id):
 
 
 if __name__ == "__main__":
+    import os
+
+    # calendar.ics is meant to be subscribed to by a normal calendar app, so
+    # (unlike roster.json) it can't be end-to-end encrypted — calendar apps
+    # just do a plain unauthenticated GET. The only realistic protection for
+    # a file like that is an unguessable URL: ICS_OUTPUT_FILENAME lets the
+    # Action publish it as e.g. "cal-<random-token>.ics" instead of the
+    # fixed, guessable "calendar.ics". Keep that filename secret — treat it
+    # like a password. Falls back to calendar.ics for local testing only.
+    output_filename = os.environ.get("ICS_OUTPUT_FILENAME", "calendar.ics")
+
     with open("roster.json", "r", encoding="utf-8") as f:
         data = json.load(f)
     entity = data.get("entity", data)
@@ -198,7 +209,7 @@ if __name__ == "__main__":
     crew_id = entity.get("crewId", "CREW")
 
     ics = build_ical(activities, crew_id)
-    with open("calendar.ics", "w", encoding="utf-8", newline="") as f:
+    with open(output_filename, "w", encoding="utf-8", newline="") as f:
         f.write(ics)
 
-    print(f"Wrote calendar.ics with events for crew {crew_id}")
+    print(f"Wrote {output_filename} with events for crew {crew_id}")

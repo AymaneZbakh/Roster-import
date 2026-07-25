@@ -19,8 +19,18 @@ jobs:
 
     - name: Install Browser Dependencies
       run: |
-        pip install playwright requests
+        pip install playwright requests cryptography
         playwright install chromium
+
+    - name: Decrypt last run's roster (runner-local only, never committed)
+      env:
+        ROSTER_PASSPHRASE: ${{ secrets.ROSTER_PASSPHRASE }}
+      run: |
+        if [ -f roster.enc.json ]; then
+          python scripts/decrypt_roster.py roster.enc.json roster.json
+        else
+          echo "No roster.enc.json yet — first run."
+        fi
 
     - name: Pre-check — Detect Roster Change
       id: precheck
@@ -161,17 +171,30 @@ jobs:
         NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
       run: python detect_changes.py
 
-    - name: Regenerate calendar.ics
+    - name: Regenerate calendar feed (unguessable filename)
       if: steps.precheck.outputs.changed == 'true'
+      env:
+        ICS_OUTPUT_FILENAME: ${{ secrets.ICS_FILENAME }}
       run: python export_ical.py
+
+    - name: Encrypt roster before it ever touches git
+      if: steps.precheck.outputs.changed == 'true'
+      env:
+        ROSTER_PASSPHRASE: ${{ secrets.ROSTER_PASSPHRASE }}
+      run: python scripts/encrypt_roster.py roster.json roster.enc.json
 
     - name: Commit and Update GitHub Pages
       if: steps.precheck.outputs.changed == 'true'
+      env:
+        ICS_OUTPUT_FILENAME: ${{ secrets.ICS_FILENAME }}
       run: |
-        rm -f roster_old.json
+        rm -f roster.json roster_old.json
         git config --global user.name "Roster Automation Bot"
         git config --global user.email "bot@github.actions"
-        git add roster.json calendar.ics
+        # Only the ENCRYPTED roster and the token-named calendar feed are
+        # ever staged — plaintext roster.json/roster_old.json are deleted
+        # above and are also .gitignore'd as a second line of defense.
+        git add roster.enc.json "${ICS_OUTPUT_FILENAME:-calendar.ics}"
         if git diff --staged --quiet; then
           echo "No changes detected. Skipping commit."
         else
