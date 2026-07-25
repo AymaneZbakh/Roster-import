@@ -42,10 +42,9 @@ def trip_key(act):
 
 
 def label_trip(act):
-    key = (act.get("key") or {}).get("name")
     date = (act.get("startTime") or "")[:10]
     route = f"{act.get('startStation','?')}→{act.get('endStation','?')}"
-    return f"{key or route} ({date})"
+    return f"{route} ({date})"
 
 
 def comparable_units(act):
@@ -69,6 +68,16 @@ def comparable_units(act):
             k = s.get("fingerprint") or f"layover|{s.get('startTime')}"
             units[k] = s
     return units
+
+
+def unit_label_str(unit):
+    """Describe a unit (flight leg / ground task / layover) by flight number
+    and departure->destination — never a trip id/key."""
+    fn = unit.get("flightNumber")
+    route = f"{unit.get('startStation','?')}→{unit.get('endStation','?')}"
+    if fn:
+        return f"{unit.get('carrier','')}{fn} {route}"
+    return route
 
 
 def crew_set(unit):
@@ -150,11 +159,12 @@ def main():
         old_units = comparable_units(old_act)
         new_units = comparable_units(new_act)
         trip_label = label_trip(new_act)
+        trip_date = (new_act.get("startTime") or "")[:10]
 
         for uk in new_units.keys() - old_units.keys():
-            messages.append(f"{trip_label}: ➕ Flight/segment added")
+            messages.append(f"{unit_label_str(new_units[uk])} ({trip_date}): ➕ Flight/segment added")
         for uk in old_units.keys() - new_units.keys():
-            messages.append(f"{trip_label}: ➖ Flight/segment removed")
+            messages.append(f"{unit_label_str(old_units[uk])} ({trip_date}): ➖ Flight/segment removed")
 
         for uk in old_units.keys() & new_units.keys():
             unit_label = trip_label
@@ -197,4 +207,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
