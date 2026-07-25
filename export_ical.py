@@ -66,6 +66,43 @@ def classify(act):
     return "other"
 
 
+def crew_lines_for(unit):
+    """CDB/OPL/CC crew assigned to a single unit (leg, layover, or activity)."""
+    crew_map = {}
+
+    def get_pos(c):
+        p = c.get("position")
+        if isinstance(p, dict):
+            return str(p.get("id", "")).upper()
+        return str(p or "").upper()
+
+    for c in unit.get("assignedCrew", []) or []:
+        pos = get_pos(c)
+        if pos in ("CDB", "OPL", "CC"):
+            key = c.get("crewId") or (c.get("givenNames", "") + c.get("surname", ""))
+            crew_map.setdefault(key, {**c, "position": pos})
+
+    return [
+        f"{c['position']}: {c.get('givenNames','')} {c.get('surname','')} ({c.get('crewId','')})"
+        for c in crew_map.values()
+    ]
+
+
+def build_event_lines(now, uid, dtstart, dtend, summary, location, desc):
+    lines = ["BEGIN:VEVENT"]
+    lines.append(fold(f"UID:{esc(uid)}"))
+    lines.append(f"DTSTAMP:{now}")
+    lines.append(f"DTSTART:{ics_date(dtstart)}")
+    lines.append(f"DTEND:{ics_date(dtend)}")
+    lines.append(fold(f"SUMMARY:{esc(summary)}"))
+    if location:
+        lines.append(fold(f"LOCATION:{esc(location)}"))
+    if desc:
+        lines.append(fold(f"DESCRIPTION:{esc(chr(10).join(desc))}"))
+    lines.append("END:VEVENT")
+    return lines
+
+
 def build_ical(activities, crew_id):
     now = ics_date_utc_now()
     lines = [
@@ -87,104 +124,91 @@ def build_ical(activities, crew_id):
 
         role = (act.get("key") or {}).get("role", "")
         key_name = (act.get("key") or {}).get("name", "")
-        uid = f"ram-{crew_id}-{idx}-{act.get('startTime', idx)}@ram-roster"
+        uid_base = f"ram-{crew_id}-{idx}-{act.get('startTime', idx)}@ram-roster"
 
         if act_type == "flight" and legs:
-            block_start = legs[0]["startTime"]
-            block_end = legs[-1]["endTime"]
-        else:
-            block_start = act.get("startTime")
-            block_end = act.get("endTime")
+            # One VEVENT per flight leg, in flight order.
+            for li, leg in enumerate(legs):
+                dtstart, dtend = parse_iso(leg.get("startTime")), parse_iso(leg.get("endTime"))
+                if not dtstart or not dtend:
+                    continue
 
-        dtstart = parse_iso(block_start)
-        dtend = parse_iso(block_end)
+                fn = f"{leg.get('carrier','')}{leg.get('flightNumber', (leg.get('activityCode') or {}).get('id',''))}"
+                takeoff = fmt_time(leg.get("startTime"))
+                summary = (
+                    f"✈ {fn + ' ' if fn else ''}{leg.get('startStation','')} → {leg.get('endStation','')}"
+                    f" · {takeoff}" + (f" ({role})" if role else "")
+                )
+
+                desc = ["All times UTC/Zulu"]
+                if key_name:
+                    desc.append(f"Trip: {key_name}")
+                block_mins = leg.get("blockTimeMinutes", leg.get("durationMinutes"))
+                desc.append(f"Block: {fmt_duration(block_mins)}")
+                if leg.get("scheduledStartTime") and leg["scheduledStartTime"] != leg.get("startTime"):
+                    desc.append(f"Sched departure: {fmt_time(leg['scheduledStartTime'])}")
+                if leg.get("scheduledEndTime") and leg["scheduledEndTime"] != leg.get("endTime"):
+                    desc.append(f"Sched arrival: {fmt_time(leg['scheduledEndTime'])}")
+                if leg.get("aircraftType"):
+                    ac_line = f"Aircraft: {leg['aircraftType']}"
+                    if leg.get("tail"):
+                        ac_line += f" ({leg['tail']})"
+                    desc.append(ac_line)
+                if leg.get("statusLabel"):
+                    desc.append(f"Status: {leg['statusLabel']}")
+                desc.extend(crew_lines_for(leg))
+
+                lines.extend(build_event_lines(
+                    now, f"{uid_base}-leg{li}", dtstart, dtend,
+                    summary, leg.get("startStation", ""), desc
+                ))
+
+            # Layovers get their own VEVENTs too.
+            for loi, lo in enumerate(s for s in subs if s.get("type") == "layover"):
+                dtstart, dtend = parse_iso(lo.get("startTime")), parse_iso(lo.get("endTime"))
+                if not dtstart or not dtend:
+                    continue
+
+                summary = f"🏨 Layover · {lo.get('startStation','?')}"
+                dur = fmt_duration(int((dtend - dtstart).total_seconds() / 60))
+                desc = ["All times UTC/Zulu"]
+                if key_name:
+                    desc.append(f"Trip: {key_name}")
+                desc.append(f"Duration: {dur}")
+                hotel = (lo.get("hotel") or {}).get("name")
+                if hotel:
+                    desc.append(f"Hotel: {hotel}")
+
+                lines.extend(build_event_lines(
+                    now, f"{uid_base}-layover{loi}", dtstart, dtend,
+                    summary, lo.get("startStation", ""), desc
+                ))
+
+            continue
+
+        # Non-flight duties (standby, training, other) — unchanged, single event.
+        dtstart, dtend = parse_iso(act.get("startTime")), parse_iso(act.get("endTime"))
         if not dtstart or not dtend:
             continue
 
-        icon = {"flight": "✈", "standby": "🔁", "training": "📚", "other": "🗓"}.get(act_type, "")
+        icon = {"standby": "🔁", "training": "📚", "other": "🗓"}.get(act_type, "")
         route = f"{act.get('startStation','')} → {act.get('endStation','')}"
-        if len(legs) > 1:
-            stops, seen = [], set()
-            for l in legs:
-                if l["startStation"] not in seen:
-                    stops.append(l["startStation"]); seen.add(l["startStation"])
-            stops.append(legs[-1]["endStation"])
-            route = " → ".join(stops)
-
         summary = f"{icon} {route}" + (f" ({role})" if role else "")
         location = act.get("startStation", "")
 
-        SEP = "──────────"
-
-        desc = []
-        leg_layover_lines = []
-
-        for s in subs:
-            if s.get("type") == "flight-leg" and not s.get("isCancelled"):
-                fn = f"{s.get('carrier','')}{s.get('flightNumber', (s.get('activityCode') or {}).get('id',''))}"
-                status = f"  [{s['statusLabel']}]" if s.get("statusLabel") else ""
-                ac = s.get("aircraftType", "")
-                reg = s.get("tail", "")
-                ac_reg = f"  {ac} {reg}".rstrip() if (ac or reg) else ""
-                leg_layover_lines.append(
-                    f"{fn}  {s['startStation']} → {s['endStation']}  "
-                    f"{fmt_time(s['startTime'])}–{fmt_time(s['endTime'])}"
-                    f"{ac_reg}{status}"
-                )
-            elif s.get("type") == "layover":
-                hotel = (s.get("hotel") or {}).get("name")
-                st, et = parse_iso(s.get("startTime")), parse_iso(s.get("endTime"))
-                dur = fmt_duration(int((et - st).total_seconds() / 60)) if st and et else None
-                line = f"🌙 Layover {s.get('startStation','')}"
-                if dur:
-                    line += f"  {dur}"
-                if hotel:
-                    line += f"  — {hotel}"
-                leg_layover_lines.append(line)
-
-        for i, line in enumerate(leg_layover_lines):
-            if i > 0:
-                desc.append(SEP)
-            desc.append(line)
-
-        if act_type in ("flight", "training"):
-            crew_map = {}
-
-            def get_pos(c):
-                p = c.get("position")
-                if isinstance(p, dict):
-                    return str(p.get("id", "")).upper()
-                return str(p or "").upper()
-
-            def collect(src):
-                for c in src.get("assignedCrew", []) or []:
-                    pos = get_pos(c)
-                    if pos in ("CDB", "OPL", "CC"):
-                        key = c.get("crewId") or (c.get("givenNames", "") + c.get("surname", ""))
-                        crew_map.setdefault(key, {**c, "position": pos})
-
-            collect(act)
+        desc = ["All times UTC/Zulu"]
+        if key_name:
+            desc.append(f"Trip: {key_name}")
+        if act.get("durationMinutes"):
+            desc.append(f"Duration: {fmt_duration(act['durationMinutes'])}")
+        if act_type == "training":
+            desc.extend(crew_lines_for(act))
             for s in subs:
-                collect(s)
+                desc.extend(crew_lines_for(s))
                 for ss in s.get("activities", []) or []:
-                    collect(ss)
-            if crew_map:
-                if desc:
-                    desc.append(SEP)
-                for c in crew_map.values():
-                    desc.append(f"{c['position']}: {c.get('givenNames','')} {c.get('surname','')} ({c.get('crewId','')})")
+                    desc.extend(crew_lines_for(ss))
 
-        lines.append("BEGIN:VEVENT")
-        lines.append(fold(f"UID:{esc(uid)}"))
-        lines.append(f"DTSTAMP:{now}")
-        lines.append(f"DTSTART:{ics_date(dtstart)}")
-        lines.append(f"DTEND:{ics_date(dtend)}")
-        lines.append(fold(f"SUMMARY:{esc(summary)}"))
-        if location:
-            lines.append(fold(f"LOCATION:{esc(location)}"))
-        if desc:
-            lines.append(fold(f"DESCRIPTION:{esc(chr(10).join(desc))}"))
-        lines.append("END:VEVENT")
+        lines.extend(build_event_lines(now, uid_base, dtstart, dtend, summary, location, desc))
 
     lines.append("END:VCALENDAR")
     return "\r\n".join(lines)
