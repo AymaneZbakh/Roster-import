@@ -55,12 +55,51 @@ def fmt_time(iso):
     return f"{d.hour:02d}:{d.minute:02d}"
 
 
+def act_code_id(act):
+    return ((act.get("activityCode") or {}).get("id") or "").upper()
+
+
+def medical_info(act):
+    """Returns {label, isFullDay} for CM (medical rest) / V1 (pre medical
+    test) / VMM (medical test day) entries, else None."""
+    code = act_code_id(act)
+    if code == "CM":
+        return {"label": "Medical Rest", "isFullDay": True}
+    if code == "V1":
+        return {"label": "Pre Medical Test", "isFullDay": False}
+    if code == "VMM":
+        return {"label": "Medical Test", "isFullDay": False}
+    return None
+
+
+def training_code_info(act):
+    """Returns {label} for ground-training (e.g. CR2/TRN) and sim-check
+    (e.g. FC/SIM) entries, whether the activityCode sits on the top-level
+    activity or on one of its sub-activities. Real flights are excluded."""
+    subs = act.get("activities", [])
+    if any(s.get("type") == "flight-leg" for s in subs):
+        return None
+
+    codes = [c for c in [act.get("activityCode")] + [s.get("activityCode") for s in subs] if c]
+    if any((c.get("group") or "").upper() == "SIM" for c in codes):
+        return {"label": "SIM CHECK"}
+    trn = next((c for c in codes if (c.get("group") or "").upper() in ("TRN", "GTR")), None)
+    if trn:
+        return {"label": trn.get("description") or "Ground Training"}
+    return None
+
+
 def classify(act):
     subs = act.get("activities", [])
+    if act_code_id(act) == "RV":
+        return "standby"
     if any(s.get("type") == "flight-leg" for s in subs):
         return "flight"
     if any(s.get("isStandby") for s in subs):
         return "standby"
+    grp = (act.get("activityCode") or {}).get("group", "").upper()
+    if grp in ("SIM", "TRN", "GTR"):
+        return "training"
     if any(s.get("isTraining") or (s.get("activityCode") or {}).get("group") in ("SIM", "GTR") for s in subs):
         return "training"
     return "other"
@@ -190,9 +229,17 @@ def build_ical(activities, crew_id):
         if not dtstart or not dtend:
             continue
 
-        icon = {"standby": "🔁", "training": "📚", "other": "🗓"}.get(act_type, "")
+        med_info = medical_info(act)
+        trn_info = training_code_info(act)
+
+        icon  = {"standby": "🔁", "training": "📚", "other": "🗓"}.get(act_type, "")
         route = f"{act.get('startStation','')} → {act.get('endStation','')}"
-        summary = f"{icon} {route}" + (f" ({role})" if role else "")
+        if med_info:
+            icon, route = "🏥", med_info["label"]
+        elif trn_info:
+            route = trn_info["label"]
+
+        summary  = f"{icon} {route}" + (f" ({role})" if role else "")
         location = act.get("startStation", "")
 
         desc = ["All times UTC/Zulu"]
@@ -200,6 +247,9 @@ def build_ical(activities, crew_id):
             desc.append(f"Trip: {key_name}")
         if act.get("durationMinutes"):
             desc.append(f"Duration: {fmt_duration(act['durationMinutes'])}")
+        if (med_info or trn_info) and (act.get("activityCode") or {}).get("description"):
+            code_id = (act.get("activityCode") or {}).get("id", "")
+            desc.append(f"Code: {code_id} — {act['activityCode']['description']}")
         if act_type == "training":
             desc.extend(crew_lines_for(act))
             for s in subs:
