@@ -1535,13 +1535,20 @@ function medicalInfo(act) {
   return null;
 }
 
-// Returns { label } for top-level ground-training (e.g. CR2/TRN) and sim-check
-// (e.g. FC/SIM) activities that have no flight legs of their own.
+// Returns { label } for ground-training (e.g. CR2/TRN) and sim-check (e.g. FC/SIM)
+// entries, whether the activityCode sits on the top-level activity or on one
+// of its sub-activities. Real flights (with an actual flight-leg) are excluded.
 function trainingCodeInfo(act) {
-  if ((act.activities || []).some(s => s.type === 'flight-leg')) return null;
-  const grp = (act.activityCode?.group || '').toUpperCase();
-  if (grp === 'SIM') return { label: 'SIM CHECK' };
-  if (grp === 'TRN' || grp === 'GTR') return { label: act.activityCode?.description || 'Ground Training' };
+  const subs = act.activities || [];
+  if (subs.some(s => s.type === 'flight-leg')) return null;
+
+  const codes = [act.activityCode, ...subs.map(s => s.activityCode)].filter(Boolean);
+  const simCode = codes.find(c => (c.group || '').toUpperCase() === 'SIM');
+  if (simCode) return { label: 'SIM CHECK' };
+
+  const trnCode = codes.find(c => ['TRN', 'GTR'].includes((c.group || '').toUpperCase()));
+  if (trnCode) return { label: trnCode.description || 'Ground Training' };
+
   return null;
 }
 
