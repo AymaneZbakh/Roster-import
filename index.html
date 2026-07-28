@@ -2129,13 +2129,22 @@ function _doExportIcal(activities, crewId, suffix = '') {
     const dtend   = icsDate(act.endTime);
     if (!dtstart || !dtend) return;
 
-    const typeLabel = { standby:'🔁', training:'📚', other:'🗓' }[type] || '';
-    const route = act.startStation + ' → ' + act.endStation;
-    const summary  = typeLabel + ' ' + route + (role ? ' ('+role+')' : '');
+    const medInfo = medicalInfo(act);
+    const trnInfo = trainingCodeInfo(act);
+
+    let icon  = { standby:'🔁', training:'📚', other:'🗓' }[type] || '';
+    let route = act.startStation + ' → ' + act.endStation;
+    if (medInfo) { icon = '🏥'; route = medInfo.label; }
+    else if (trnInfo) { route = trnInfo.label; }
+
+    const summary  = icon + ' ' + route + (role ? ' ('+role+')' : '');
     const location = act.startStation || '';
     const descParts = ['All times UTC/Zulu'];
     if (keyName) descParts.push('Trip: ' + keyName);
     if (act.durationMinutes) descParts.push('Duration: ' + fmtDuration(act.durationMinutes));
+    if ((medInfo || trnInfo) && act.activityCode?.description) {
+      descParts.push('Code: ' + (act.activityCode.id||'') + ' — ' + act.activityCode.description);
+    }
     if (type === 'training') {
       descParts.push(...crewLinesFor(act));
       subs.forEach(s => {
