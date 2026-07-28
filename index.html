@@ -395,6 +395,7 @@
     .badge-standby  { background: var(--amber-dim); color: var(--amber); }
     .badge-training { background: var(--green-dim); color: var(--green); }
     .badge-other    { background: rgba(255,255,255,0.06); color: var(--text-2); }
+    .badge-medical  { background: var(--ram-red-dim); color: var(--ram-red); }
 
     .card-date {
       font-size: 12px;
@@ -1296,6 +1297,7 @@ let rosterData     = null;
 let cardIdCounter  = 0;
 let knownFlightKeys = new Set();
 let urgentTimers   = [];
+let vmDateSet      = new Set(); // dates (YYYY-MM-DD) of 'VM' medical-test activities, for pre/actual-day labeling
 
 // ── TOAST NOTIFICATION ────────────────────────────────────────────────────
 function showToast(title, message, subtext) {
@@ -1522,8 +1524,30 @@ function avClass(pos) {
 }
 function ini(g, s) { return (((g||'')[0]||'') + ((s||'')[0]||'')).toUpperCase(); }
 
+function actCodeId(act) { return ((act.activityCode || {}).id || '').toUpperCase(); }
+
+function shiftDate(dateStr, days) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.getUTCFullYear() + '-' + String(dt.getUTCMonth() + 1).padStart(2, '0') + '-' + String(dt.getUTCDate()).padStart(2, '0');
+}
+
+// Returns { label, isFullDay } for CM (medical rest) / VM (medical test) entries, else null.
+function medicalInfo(act) {
+  const code = actCodeId(act);
+  if (code === 'CM') return { label: 'Medical Rest', isFullDay: true };
+  if (code === 'VM') {
+    const d = (act.startTime || '').slice(0, 10);
+    const isActualTestDay = vmDateSet.has(shiftDate(d, -1));
+    return { label: isActualTestDay ? 'Medical Test' : 'Pre Medical Test', isFullDay: false };
+  }
+  return null;
+}
+
 function classifyActivity(act) {
   const subs = act.activities || [];
+  if (actCodeId(act) === 'RV') return 'standby';
   if (subs.some(s => s.type === 'flight-leg')) return 'flight';
   if (subs.some(s => s.isStandby)) return 'standby';
   if (subs.some(s => s.isTraining || s.activityCode?.group === 'SIM' || s.activityCode?.group === 'GTR')) return 'training';
@@ -1575,6 +1599,9 @@ function renderRoster(data) {
   document.getElementById('filterBar').classList.remove('hidden');
 
   allCards = [];
+  vmDateSet = new Set(
+    activities.filter(a => actCodeId(a) === 'VM').map(a => (a.startTime || '').slice(0, 10))
+  );
   const uniqueMonths = new Set();
   const monthNames   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -1589,6 +1616,7 @@ function renderRoster(data) {
     const flightLegs = subs.filter(s => s.type === 'flight-leg');
     const role       = act.key?.role || '';
     const keyName    = act.key?.name || '';
+    const medInfo    = medicalInfo(act);
 
     const blockMins  = flightLegs.reduce((acc, l) => acc + (l.blockTimeMinutes || l.durationMinutes || 0), 0);
 
@@ -1598,6 +1626,7 @@ function renderRoster(data) {
       stops.push(flightLegs[flightLegs.length-1].endStation);
       routeText = stops.join(' → ');
     }
+    if (medInfo) routeText = act.activityCode?.description || medInfo.label;
 
     const SKIP = new Set(['briefing', 'debriefing']);
     let timelineHTML = '<div class="section-label">Timeline</div><div class="timeline">';
@@ -1651,8 +1680,9 @@ function renderRoster(data) {
     });
     timelineHTML += '</div>';
 
-    const badgeClass = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' }[type];
-    const badgeLabel = { flight:'Flight', standby:'Reserve', training:'Training', other:'Duty' }[type];
+    let badgeClass = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' }[type];
+    let badgeLabel = { flight:'Flight', standby:'Reserve', training:'Training', other:'Duty' }[type];
+    if (medInfo) { badgeClass = 'badge-medical'; badgeLabel = medInfo.label; }
 
     const cardId = ++cardIdCounter;
     const card   = document.createElement('div');
@@ -1685,6 +1715,22 @@ function renderRoster(data) {
          <span class="urgent-countdown" id="countdown-${cardId}">${fmtCountdown(msUntil)}</span>`
       : '';
 
+    // CM (medical rest) is a full-day entry — show just the date, no times.
+    const cardTimeHTML = (medInfo && medInfo.isFullDay)
+      ? `<span class="card-time">Full day</span>`
+      : `<span class="card-time">${fmtTime(act.startTime)} – ${fmtTime(act.endTime)}</span>`;
+
+    const detailGridHTML = (medInfo && medInfo.isFullDay)
+      ? `<div class="detail-grid">
+           <div class="detail-item"><label>Date</label><span>${fmtDate(act.startTime)}</span></div>
+           <div class="detail-item"><label>Duration</label><span>Full day</span></div>
+         </div>`
+      : `<div class="detail-grid">
+           <div class="detail-item"><label>Duration</label><span>${fmtDuration(act.durationMinutes)}</span></div>
+           <div class="detail-item"><label>Start</label><span>${fmtDateTime(act.startTime)}</span></div>
+           <div class="detail-item"><label>End</label><span>${fmtDateTime(act.endTime)}</span></div>
+         </div>`;
+
     card.innerHTML = `
       <div class="card-header" onclick="toggleCard(this.nextElementSibling, this.querySelector('.card-chevron'))">
         <div class="card-select-cb" onclick="toggleSelect(event, ${cardId})">
@@ -1693,16 +1739,12 @@ function renderRoster(data) {
         <span class="type-badge ${badgeClass}">${badgeLabel}</span>
         ${urgentBadgeHTML}
         <span class="card-date">${fmtDate(act.startTime)}</span>
-        <span class="card-route">${routeText}<span class="card-role"> · ${role}</span></span>
-        <span class="card-time">${fmtTime(act.startTime)} – ${fmtTime(act.endTime)}</span>
+        <span class="card-route">${routeText}${role ? `<span class="card-role"> · ${role}</span>` : ''}</span>
+        ${cardTimeHTML}
         <i class="ti ti-chevron-down card-chevron"></i>
       </div>
       <div class="card-body">
-        <div class="detail-grid">
-          <div class="detail-item"><label>Duration</label><span>${fmtDuration(act.durationMinutes)}</span></div>
-          <div class="detail-item"><label>Start</label><span>${fmtDateTime(act.startTime)}</span></div>
-          <div class="detail-item"><label>End</label><span>${fmtDateTime(act.endTime)}</span></div>
-        </div>
+        ${detailGridHTML}
         ${timelineHTML}
       </div>`;
 
@@ -1988,67 +2030,23 @@ function _doExportIcal(activities, crewId, suffix = '') {
     fold('X-WR-CALNAME:RAM Roster – ' + crewId),'X-WR-TIMEZONE:UTC',
   ];
 
-  activities.forEach((act, idx) => {
-    const type       = classifyActivity(act);
-    const subs       = act.activities || [];
-    const flightLegs = subs.filter(s => s.type === 'flight-leg');
-    const role       = act.key?.role || '';
-    const keyName    = act.key?.name || '';
-    const uid        = 'ram-' + crewId + '-' + idx + '-' + (act.startTime||idx) + '@ram-roster';
-    // For flights, use the actual flight block (first leg off-blocks to last leg on-blocks)
-    // rather than the wider duty span, which also includes briefing/debriefing padding.
-    const blockStart = (type === 'flight' && flightLegs.length) ? flightLegs[0].startTime : act.startTime;
-    const blockEnd   = (type === 'flight' && flightLegs.length) ? flightLegs[flightLegs.length-1].endTime : act.endTime;
-    const dtstart    = icsDate(blockStart);
-    const dtend      = icsDate(blockEnd);
-    if (!dtstart || !dtend) return;
-
-    const typeLabel = { flight:'✈', standby:'🔁', training:'📚', other:'🗓' }[type] || '';
-    let route = act.startStation + ' → ' + act.endStation;
-    if (flightLegs.length > 1) {
-      const stops = [...new Set(flightLegs.map(l => l.startStation))];
-      stops.push(flightLegs[flightLegs.length-1].endStation);
-      route = stops.join(' → ');
-    }
-    const summary  = typeLabel + ' ' + route + (role ? ' ('+role+')' : '');
-    const location = act.startStation || '';
-    const descParts = [];
-    descParts.push('All times UTC/Zulu');
-    if (keyName) descParts.push('Trip: ' + keyName);
-    if (type === 'flight' && flightLegs.length) {
-      const blockMins = Math.round((new Date(blockEnd) - new Date(blockStart)) / 60000);
-      descParts.push('Block: ' + fmtDuration(blockMins));
-    } else if (act.durationMinutes) {
-      descParts.push('Duration: ' + fmtDuration(act.durationMinutes));
-    }
-    flightLegs.forEach(l => {
-      const fn = (l.carrier||'') + (l.flightNumber||l.activityCode?.id||'');
-      descParts.push(fn + '  ' + l.startStation + ' → ' + l.endStation
-        + '  ' + fmtTime(l.startTime) + '–' + fmtTime(l.endTime)
-        + (l.aircraftType ? '  ' + l.aircraftType : '')
-        + (l.statusLabel  ? '  [' + l.statusLabel + ']' : ''));
+  // Crew helper — same CDB/OPL-only filter the old combined notes used, but
+  // scoped to a single leg/layover unit instead of the whole multi-leg trip.
+  function crewLinesFor(unit) {
+    const crewMap = new Map();
+    (unit.assignedCrew || []).forEach(c => {
+      const pos = (c.position?.id || c.position || '').toUpperCase();
+      if (pos === 'CDB' || pos === 'OPL') {
+        const key = c.crewId || (c.givenNames + c.surname);
+        if (!crewMap.has(key)) crewMap.set(key, { ...c, position: pos });
+      }
     });
-    if (type === 'flight' || type === 'training') {
-      const crewMap = new Map();
-      const collectCrew = (source) => {
-        (source.assignedCrew || []).forEach(c => {
-          const pos = (c.position?.id || c.position || '').toUpperCase();
-          if (pos === 'CDB' || pos === 'OPL') {
-            const key = c.crewId || (c.givenNames + c.surname);
-            if (!crewMap.has(key)) crewMap.set(key, { ...c, position: pos });
-          }
-        });
-      };
-      collectCrew(act);
-      subs.forEach(s => {
-        collectCrew(s);
-        (s.activities || []).forEach(ss => collectCrew(ss));
-      });
-      [...crewMap.values()].forEach(c => {
-        descParts.push(c.position + ': ' + c.givenNames + ' ' + c.surname + ' (' + c.crewId + ')');
-      });
-    }
+    return [...crewMap.values()].map(c =>
+      c.position + ': ' + c.givenNames + ' ' + c.surname + ' (' + c.crewId + ')');
+  }
 
+  function pushEvent(uid, dtstart, dtend, summary, location, descParts) {
+    if (!dtstart || !dtend) return;
     cal.push('BEGIN:VEVENT');
     cal.push(fold('UID:' + icsEscape(uid)));
     cal.push('DTSTAMP:' + now);
@@ -2058,6 +2056,84 @@ function _doExportIcal(activities, crewId, suffix = '') {
     if (location) cal.push(fold('LOCATION:' + icsEscape(location)));
     if (descParts.length) cal.push(fold('DESCRIPTION:' + icsEscape(descParts.join('\n'))));
     cal.push('END:VEVENT');
+  }
+
+  activities.forEach((act, idx) => {
+    const type       = classifyActivity(act);
+    const subs       = act.activities || [];
+    const flightLegs = subs.filter(s => s.type === 'flight-leg');
+    const layovers   = subs.filter(s => s.type === 'layover');
+    const role       = act.key?.role || '';
+    const keyName    = act.key?.name || '';
+    const uidBase    = 'ram-' + crewId + '-' + idx + '-' + (act.startTime||idx) + '@ram-roster';
+
+    if (type === 'flight' && flightLegs.length) {
+      // One event per flight leg, in flight order.
+      flightLegs.forEach((l, li) => {
+        const fn      = (l.carrier||'') + (l.flightNumber||l.activityCode?.id||'');
+        const takeoff = fmtTime(l.startTime);
+        const summary = '✈ ' + (fn ? fn+' ' : '') + l.startStation + ' → ' + l.endStation
+                       + ' · ' + takeoff + (role ? ' ('+role+')' : '');
+
+        const descParts = ['All times UTC/Zulu'];
+        if (keyName) descParts.push('Trip: ' + keyName);
+        descParts.push('Block: ' + fmtDuration(l.blockTimeMinutes || l.durationMinutes));
+        if (l.scheduledStartTime && l.scheduledStartTime !== l.startTime) {
+          descParts.push('Sched departure: ' + fmtTime(l.scheduledStartTime));
+        }
+        if (l.scheduledEndTime && l.scheduledEndTime !== l.endTime) {
+          descParts.push('Sched arrival: ' + fmtTime(l.scheduledEndTime));
+        }
+        if (l.aircraftType) descParts.push('Aircraft: ' + l.aircraftType + (l.tail ? ' ('+l.tail+')' : ''));
+        if (l.statusLabel)  descParts.push('Status: ' + l.statusLabel);
+        descParts.push(...crewLinesFor(l));
+
+        pushEvent(
+          uidBase + '-leg' + li,
+          icsDate(l.startTime), icsDate(l.endTime),
+          summary, l.startStation, descParts
+        );
+      });
+
+      // Layovers get their own events too.
+      layovers.forEach((lo, loi) => {
+        const summary = '🏨 Layover · ' + (lo.startStation || '?');
+        const descParts = ['All times UTC/Zulu'];
+        if (keyName) descParts.push('Trip: ' + keyName);
+        descParts.push('Duration: ' + fmtDuration(lo.durationMinutes));
+        const hotel = lo.hotel?.name;
+        if (hotel) descParts.push('Hotel: ' + hotel);
+
+        pushEvent(
+          uidBase + '-layover' + loi,
+          icsDate(lo.startTime), icsDate(lo.endTime),
+          summary, lo.startStation, descParts
+        );
+      });
+      return;
+    }
+
+    // Non-flight duties (standby, training, other) — unchanged, single event.
+    const dtstart = icsDate(act.startTime);
+    const dtend   = icsDate(act.endTime);
+    if (!dtstart || !dtend) return;
+
+    const typeLabel = { standby:'🔁', training:'📚', other:'🗓' }[type] || '';
+    const route = act.startStation + ' → ' + act.endStation;
+    const summary  = typeLabel + ' ' + route + (role ? ' ('+role+')' : '');
+    const location = act.startStation || '';
+    const descParts = ['All times UTC/Zulu'];
+    if (keyName) descParts.push('Trip: ' + keyName);
+    if (act.durationMinutes) descParts.push('Duration: ' + fmtDuration(act.durationMinutes));
+    if (type === 'training') {
+      descParts.push(...crewLinesFor(act));
+      subs.forEach(s => {
+        descParts.push(...crewLinesFor(s));
+        (s.activities || []).forEach(ss => descParts.push(...crewLinesFor(ss)));
+      });
+    }
+
+    pushEvent(uidBase, dtstart, dtend, summary, location, descParts);
   });
   cal.push('END:VCALENDAR');
 
@@ -2201,9 +2277,10 @@ function renderCalendar() {
     let inner = `<span class="cal-cell-day">${d}</span>`;
     const shown = cards.slice(0, 2);
     shown.forEach(c => {
-      const label = c.act.startStation && c.act.endStation
-        ? c.act.startStation + '→' + c.act.endStation
-        : (c.act.key?.name || c.type);
+      const medInfo = medicalInfo(c.act);
+      const label = medInfo
+        ? medInfo.label
+        : (c.act.startStation && c.act.endStation ? c.act.startStation + '→' + c.act.endStation : (c.act.key?.name || c.type));
       inner += `<div class="cal-pill ${c.type}"><i class="ti ${ICONS[c.type]||'ti-point'}"></i>${label}</div>`;
     });
     if (cards.length > 2) inner += `<div class="cal-pill-more">+${cards.length - 2} more</div>`;
@@ -2272,6 +2349,7 @@ function renderDayPanel(dateKey, cards) {
       subs.forEach(s => { collectC(s); (s.activities||[]).forEach(ss => collectC(ss)); });
     }
     const crewList = [...crewMap.values()];
+    const medInfo = medicalInfo(act);
 
     let routeText = (act.startStation || '?') + ' → ' + (act.endStation || '?');
     if (legs.length > 1) {
@@ -2279,6 +2357,7 @@ function renderDayPanel(dateKey, cards) {
       stops.push(legs[legs.length-1].endStation);
       routeText = stops.join(' → ');
     }
+    if (medInfo) routeText = act.activityCode?.description || medInfo.label;
 
     const card = document.createElement('div');
     card.className = 'day-card';
@@ -2308,12 +2387,18 @@ function renderDayPanel(dateKey, cards) {
       }
     });
 
+    const dayBadgeClass = medInfo ? 'badge-medical' : BADGE[c.type];
+    const dayBadgeLabel = medInfo ? medInfo.label   : LABEL[c.type];
+    const dayTimeHTML = (medInfo && medInfo.isFullDay)
+      ? `<span class="day-card-time">Full day</span>`
+      : `<span class="day-card-time">${fmtTime(act.startTime)}–${fmtTime(act.endTime)}</span>`;
+
     card.innerHTML = `
       <div class="day-card-header">
-        <span class="type-badge ${BADGE[c.type]}">${LABEL[c.type]}</span>
+        <span class="type-badge ${dayBadgeClass}">${dayBadgeLabel}</span>
         <span class="day-card-route">${routeText}</span>
-        <span class="day-card-time">${fmtTime(act.startTime)}–${fmtTime(act.endTime)}</span>
-        <span class="day-card-dur">${fmtDuration(act.durationMinutes)}</span>
+        ${dayTimeHTML}
+        <span class="day-card-dur">${(medInfo && medInfo.isFullDay) ? 'Full day' : fmtDuration(act.durationMinutes)}</span>
       </div>
       ${legsHTML}`;
 
