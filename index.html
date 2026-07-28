@@ -1297,7 +1297,6 @@ let rosterData     = null;
 let cardIdCounter  = 0;
 let knownFlightKeys = new Set();
 let urgentTimers   = [];
-let vmDateSet      = new Set(); // dates (YYYY-MM-DD) of 'VM' medical-test activities, for pre/actual-day labeling
 
 // ── TOAST NOTIFICATION ────────────────────────────────────────────────────
 function showToast(title, message, subtext) {
@@ -1526,36 +1525,42 @@ function ini(g, s) { return (((g||'')[0]||'') + ((s||'')[0]||'')).toUpperCase();
 
 function actCodeId(act) { return ((act.activityCode || {}).id || '').toUpperCase(); }
 
-function shiftDate(dateStr, days) {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() + days);
-  return dt.getUTCFullYear() + '-' + String(dt.getUTCMonth() + 1).padStart(2, '0') + '-' + String(dt.getUTCDate()).padStart(2, '0');
-}
-
-// Returns { label, isFullDay } for CM (medical rest) / VM (medical test) entries, else null.
+// Returns { label, isFullDay } for CM (medical rest) / V1 (pre medical test) /
+// VMM (medical test day) entries, else null.
 function medicalInfo(act) {
   const code = actCodeId(act);
-  if (code === 'CM') return { label: 'Medical Rest', isFullDay: true };
-  if (code === 'VM') {
-    const d = (act.startTime || '').slice(0, 10);
-    const isActualTestDay = vmDateSet.has(shiftDate(d, -1));
-    return { label: isActualTestDay ? 'Medical Test' : 'Pre Medical Test', isFullDay: false };
-  }
+  if (code === 'CM')  return { label: 'Medical Rest',    isFullDay: true };
+  if (code === 'V1')  return { label: 'Pre Medical Test', isFullDay: false };
+  if (code === 'VMM') return { label: 'Medical Test',     isFullDay: false };
+  return null;
+}
+
+// Returns { label } for top-level ground-training (e.g. CR2/TRN) and sim-check
+// (e.g. FC/SIM) activities that have no flight legs of their own.
+function trainingCodeInfo(act) {
+  if ((act.activities || []).some(s => s.type === 'flight-leg')) return null;
+  const grp = (act.activityCode?.group || '').toUpperCase();
+  if (grp === 'SIM') return { label: 'Sim Check' };
+  if (grp === 'TRN' || grp === 'GTR') return { label: act.activityCode?.description || 'Ground Training' };
   return null;
 }
 
 function classifyActivity(act) {
   const subs = act.activities || [];
+  const grp  = (act.activityCode?.group || '').toUpperCase();
   if (actCodeId(act) === 'RV') return 'standby';
   if (subs.some(s => s.type === 'flight-leg')) return 'flight';
   if (subs.some(s => s.isStandby)) return 'standby';
+  if (grp === 'SIM' || grp === 'TRN' || grp === 'GTR') return 'training';
   if (subs.some(s => s.isTraining || s.activityCode?.group === 'SIM' || s.activityCode?.group === 'GTR')) return 'training';
   return 'other';
 }
 
 function entryType(act, type) {
   const subs = act.activities || [];
+  const grp  = (act.activityCode?.group || '').toUpperCase();
+  if (grp === 'SIM') return 'Sim Check';
+  if (grp === 'TRN' || grp === 'GTR') return 'Ground Training';
   if (subs.some(s => s.activityCode?.group === 'SIM')) return 'Simulator';
   if (subs.some(s => s.activityCode?.group === 'DH' || (s.activityCode?.id||'').toUpperCase().includes('DH'))) return 'Deadhead';
   if (type === 'standby') return 'Reserve';
@@ -1599,9 +1604,6 @@ function renderRoster(data) {
   document.getElementById('filterBar').classList.remove('hidden');
 
   allCards = [];
-  vmDateSet = new Set(
-    activities.filter(a => actCodeId(a) === 'VM').map(a => (a.startTime || '').slice(0, 10))
-  );
   const uniqueMonths = new Set();
   const monthNames   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -1617,6 +1619,7 @@ function renderRoster(data) {
     const role       = act.key?.role || '';
     const keyName    = act.key?.name || '';
     const medInfo    = medicalInfo(act);
+    const trnInfo    = trainingCodeInfo(act);
 
     const blockMins  = flightLegs.reduce((acc, l) => acc + (l.blockTimeMinutes || l.durationMinutes || 0), 0);
 
@@ -1627,6 +1630,7 @@ function renderRoster(data) {
       routeText = stops.join(' → ');
     }
     if (medInfo) routeText = act.activityCode?.description || medInfo.label;
+    else if (trnInfo) routeText = act.activityCode?.description || trnInfo.label;
 
     const SKIP = new Set(['briefing', 'debriefing']);
     let timelineHTML = '<div class="section-label">Timeline</div><div class="timeline">';
@@ -1683,6 +1687,7 @@ function renderRoster(data) {
     let badgeClass = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' }[type];
     let badgeLabel = { flight:'Flight', standby:'Reserve', training:'Training', other:'Duty' }[type];
     if (medInfo) { badgeClass = 'badge-medical'; badgeLabel = medInfo.label; }
+    else if (trnInfo) { badgeClass = 'badge-training'; badgeLabel = trnInfo.label; }
 
     const cardId = ++cardIdCounter;
     const card   = document.createElement('div');
@@ -2278,8 +2283,11 @@ function renderCalendar() {
     const shown = cards.slice(0, 2);
     shown.forEach(c => {
       const medInfo = medicalInfo(c.act);
+      const trnInfo = trainingCodeInfo(c.act);
       const label = medInfo
         ? medInfo.label
+        : trnInfo
+        ? trnInfo.label
         : (c.act.startStation && c.act.endStation ? c.act.startStation + '→' + c.act.endStation : (c.act.key?.name || c.type));
       inner += `<div class="cal-pill ${c.type}"><i class="ti ${ICONS[c.type]||'ti-point'}"></i>${label}</div>`;
     });
@@ -2350,6 +2358,7 @@ function renderDayPanel(dateKey, cards) {
     }
     const crewList = [...crewMap.values()];
     const medInfo = medicalInfo(act);
+    const trnInfo = trainingCodeInfo(act);
 
     let routeText = (act.startStation || '?') + ' → ' + (act.endStation || '?');
     if (legs.length > 1) {
@@ -2358,6 +2367,7 @@ function renderDayPanel(dateKey, cards) {
       routeText = stops.join(' → ');
     }
     if (medInfo) routeText = act.activityCode?.description || medInfo.label;
+    else if (trnInfo) routeText = act.activityCode?.description || trnInfo.label;
 
     const card = document.createElement('div');
     card.className = 'day-card';
@@ -2387,8 +2397,8 @@ function renderDayPanel(dateKey, cards) {
       }
     });
 
-    const dayBadgeClass = medInfo ? 'badge-medical' : BADGE[c.type];
-    const dayBadgeLabel = medInfo ? medInfo.label   : LABEL[c.type];
+    const dayBadgeClass = medInfo ? 'badge-medical' : (trnInfo ? 'badge-training' : BADGE[c.type]);
+    const dayBadgeLabel = medInfo ? medInfo.label   : (trnInfo ? trnInfo.label   : LABEL[c.type]);
     const dayTimeHTML = (medInfo && medInfo.isFullDay)
       ? `<span class="day-card-time">Full day</span>`
       : `<span class="day-card-time">${fmtTime(act.startTime)}–${fmtTime(act.endTime)}</span>`;
