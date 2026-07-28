@@ -1540,7 +1540,7 @@ function medicalInfo(act) {
 function trainingCodeInfo(act) {
   if ((act.activities || []).some(s => s.type === 'flight-leg')) return null;
   const grp = (act.activityCode?.group || '').toUpperCase();
-  if (grp === 'SIM') return { label: 'Sim Check' };
+  if (grp === 'SIM') return { label: 'SIM CHECK' };
   if (grp === 'TRN' || grp === 'GTR') return { label: act.activityCode?.description || 'Ground Training' };
   return null;
 }
@@ -1687,7 +1687,6 @@ function renderRoster(data) {
     let badgeClass = { flight:'badge-flight', standby:'badge-standby', training:'badge-training', other:'badge-other' }[type];
     let badgeLabel = { flight:'Flight', standby:'Reserve', training:'Training', other:'Duty' }[type];
     if (medInfo) { badgeClass = 'badge-medical'; badgeLabel = medInfo.label; }
-    else if (trnInfo) { badgeClass = 'badge-training'; badgeLabel = trnInfo.label; }
 
     const cardId = ++cardIdCounter;
     const card   = document.createElement('div');
@@ -2397,8 +2396,8 @@ function renderDayPanel(dateKey, cards) {
       }
     });
 
-    const dayBadgeClass = medInfo ? 'badge-medical' : (trnInfo ? 'badge-training' : BADGE[c.type]);
-    const dayBadgeLabel = medInfo ? medInfo.label   : (trnInfo ? trnInfo.label   : LABEL[c.type]);
+    const dayBadgeClass = medInfo ? 'badge-medical' : BADGE[c.type];
+    const dayBadgeLabel = medInfo ? medInfo.label   : LABEL[c.type];
     const dayTimeHTML = (medInfo && medInfo.isFullDay)
       ? `<span class="day-card-time">Full day</span>`
       : `<span class="day-card-time">${fmtTime(act.startTime)}–${fmtTime(act.endTime)}</span>`;
