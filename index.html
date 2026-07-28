@@ -1630,7 +1630,7 @@ function renderRoster(data) {
       routeText = stops.join(' → ');
     }
     if (medInfo) routeText = act.activityCode?.description || medInfo.label;
-    else if (trnInfo) routeText = act.activityCode?.description || trnInfo.label;
+    else if (trnInfo) routeText = trnInfo.label;
 
     const SKIP = new Set(['briefing', 'debriefing']);
     let timelineHTML = '<div class="section-label">Timeline</div><div class="timeline">';
@@ -2366,7 +2366,7 @@ function renderDayPanel(dateKey, cards) {
       routeText = stops.join(' → ');
     }
     if (medInfo) routeText = act.activityCode?.description || medInfo.label;
-    else if (trnInfo) routeText = act.activityCode?.description || trnInfo.label;
+    else if (trnInfo) routeText = trnInfo.label;
 
     const card = document.createElement('div');
     card.className = 'day-card';
