@@ -42,8 +42,19 @@ def trip_key(act):
 
 
 def label_trip(act):
+    """Describe a whole trip by its full route built from its flight legs,
+    e.g. CMN→STN→CMN, instead of just the trip's first/last station
+    (which would read CMN→CMN for any round trip)."""
     date = (act.get("startTime") or "")[:10]
-    route = f"{act.get('startStation','?')}→{act.get('endStation','?')}"
+    legs = sorted(
+        (s for s in (act.get("activities") or []) if s.get("type") == "flight-leg"),
+        key=lambda s: s.get("startTime") or "",
+    )
+    if legs:
+        stops = [legs[0].get("startStation", "?")] + [l.get("endStation", "?") for l in legs]
+        route = "→".join(stops)
+    else:
+        route = f"{act.get('startStation','?')}→{act.get('endStation','?')}"
     return f"{route} ({date})"
 
 
@@ -54,7 +65,6 @@ def comparable_units(act):
     subs = act.get("activities")
     if not subs:
         return {f"self|{trip_key(act)}": act}
-
     units = {}
     for s in subs:
         t = s.get("type")
@@ -100,7 +110,6 @@ def hotel_name(unit):
 
 def diff_unit(label, old_unit, new_unit):
     changes = []
-
     for field, human in TRACKED_FIELDS:
         old_val = old_unit.get(field)
         new_val = new_unit.get(field)
@@ -167,11 +176,15 @@ def main():
             messages.append(f"{unit_label_str(old_units[uk])} ({trip_date}): ➖ Flight/segment removed")
 
         for uk in old_units.keys() & new_units.keys():
-            unit_label = trip_label
-            fn = new_units[uk].get("flightNumber")
-            if fn:
-                unit_label = f"{new_units[uk].get('carrier','')}{fn} " + trip_label
-            messages.extend(diff_unit(unit_label, old_units[uk], new_units[uk]))
+            unit = new_units[uk]
+            # Label each leg with ITS OWN route (AT808 CMN→STN), not the
+            # whole trip's route (which is CMN→CMN for any round trip).
+            if unit.get("flightNumber") or unit.get("startStation"):
+                leg_date = (unit.get("startTime") or "")[:10] or trip_date
+                unit_label = f"{unit_label_str(unit)} ({leg_date})"
+            else:
+                unit_label = trip_label
+            messages.extend(diff_unit(unit_label, old_units[uk], unit))
 
     if not messages:
         print("No changes detected.")
