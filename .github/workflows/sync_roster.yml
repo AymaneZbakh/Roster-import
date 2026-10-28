@@ -1,13 +1,19 @@
 name: Automated RAM Roster Sync
 on:
   schedule:
-    - cron: '0 */2 * * *'
+    - cron: '*/5 * * * *'    # every 5 min (GitHub may run it late under load)
   workflow_dispatch:
 permissions:
   contents: write
+# Never run two syncs at once (each browser run takes a few minutes);
+# if one is already running, the next waits instead of overlapping.
+concurrency:
+  group: roster-sync
+  cancel-in-progress: false
 jobs:
   fetch-and-publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
     - name: Checkout Repository Code
       uses: actions/checkout@v4
